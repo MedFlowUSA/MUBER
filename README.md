@@ -21,17 +21,25 @@ copy .env.example .env.local
 npm run dev
 ```
 
-Open `http://localhost:3000`. Supabase variables can remain blank for the local demo. Run all checks with `npm run check`.
+Open `http://localhost:3000`. Supabase configuration is required for authentication and real submissions. Run all checks with `npm run check`.
 
-## Supabase next steps
+### Required environment variables
+
+- `NEXT_PUBLIC_SUPABASE_URL` — browser-safe project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — browser-safe anonymous/publishable key
+- `NEXT_PUBLIC_SITE_URL` — exact application origin, without a trailing slash
+
+Do not expose a database password, service-role key, access token, or authenticated connection string. For Vercel, scope these browser-safe values to Preview until authentication, booking, and RLS checks have completed. Configure the Supabase Site URL for the deployed origin and allow `https://<deployment-origin>/auth/callback` plus `http://localhost:3000/auth/callback` during development.
+
+## Supabase operations
 
 1. Create separate development, preview, and production projects.
-2. Resolve the authorization questions at the bottom of `supabase/migrations/0001_initial_schema.sql`.
-3. Add narrow customer, organization, assignment, dispatcher, and admin policies. Do not deploy the draft with missing ownership policies.
+2. Review migrations in order; customer access is ownership-scoped and direct private-table writes remain denied.
+3. Add provider/dispatcher/admin policies only when those roles are implemented.
 4. Create a private `job-media` bucket with MIME/10 MB restrictions and signed access.
 5. Set the two `NEXT_PUBLIC_` variables. Keep `SUPABASE_SERVICE_ROLE_KEY` server-only.
-6. Replace `getServerUser()` and `bookingRepository.submitLocal()` with validated server-side implementations.
-7. Test the reviewed migration and every role in development with RLS enabled.
+6. Abandoned upload objects live under `<user>/<job>/...`; schedule a server-side cleanup task for objects without `job_media` rows after 24 hours.
+7. Test every new role against RLS before granting it access.
 
 ## Vercel next steps
 

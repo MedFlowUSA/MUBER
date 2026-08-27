@@ -1,1 +1,12 @@
-export default function Loading(){ return <main className="shell py-20" aria-busy="true"><div className="h-5 w-28 animate-pulse rounded bg-navy/10"/><div className="mt-5 h-16 max-w-xl animate-pulse rounded-2xl bg-navy/10"/><div className="mt-10 grid gap-5 sm:grid-cols-2"><div className="h-56 animate-pulse rounded-3xl bg-navy/10"/><div className="h-56 animate-pulse rounded-3xl bg-navy/10"/></div></main> }
+export default function Loading() {
+  return (
+    <main className="shell py-20" aria-busy="true">
+      <div className="h-5 w-28 animate-pulse rounded bg-navy/10" />
+      <div className="mt-5 h-16 max-w-xl animate-pulse rounded-2xl bg-navy/10" />
+      <div className="mt-10 grid gap-5 sm:grid-cols-2">
+        <div className="h-56 animate-pulse rounded-3xl bg-navy/10" />
+        <div className="h-56 animate-pulse rounded-3xl bg-navy/10" />
+      </div>
+    </main>
+  );
+}

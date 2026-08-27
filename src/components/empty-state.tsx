@@ -1,2 +1,26 @@
-import Link from "next/link"; import { Inbox } from "lucide-react";
-export function EmptyState({title,copy,action}:{title:string;copy:string;action?:{label:string;href:string}}){return <div className="card flex min-h-64 flex-col items-start justify-center"><span className="grid size-12 place-items-center rounded-2xl bg-navy/10"><Inbox/></span><h2 className="mt-5 text-xl font-black">{title}</h2><p className="mt-2 max-w-lg text-sm leading-6 text-slate">{copy}</p>{action&&<Link className="btn-primary mt-6" href={action.href}>{action.label}</Link>}</div>}
+import Link from "next/link";
+import { Inbox } from "lucide-react";
+export function EmptyState({
+  title,
+  copy,
+  action,
+}: {
+  title: string;
+  copy: string;
+  action?: { label: string; href: string };
+}) {
+  return (
+    <div className="card flex min-h-64 flex-col items-start justify-center">
+      <span className="grid size-12 place-items-center rounded-2xl bg-navy/10">
+        <Inbox />
+      </span>
+      <h2 className="mt-5 text-xl font-black">{title}</h2>
+      <p className="mt-2 max-w-lg text-sm leading-6 text-slate">{copy}</p>
+      {action && (
+        <Link className="btn-primary mt-6" href={action.href}>
+          {action.label}
+        </Link>
+      )}
+    </div>
+  );
+}

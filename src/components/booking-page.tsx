@@ -1,2 +1,34 @@
-import { Logo } from "./logo"; import { BookingFlow } from "./booking-flow"; import { ServiceKind } from "@/lib/booking";
-export function BookingPage({service}:{service:ServiceKind}){return <main className="min-h-screen bg-warm"><header className="border-b border-navy/10 bg-white"><div className="shell flex h-20 items-center justify-between"><Logo/><span className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest ${service==="move"?"bg-navy text-white":"bg-orange text-white"}`}>{service==="move"?"Move It":"Remove It"}</span></div></header><div className="shell grid gap-10 py-10 lg:grid-cols-[.65fr_1.35fr]"><aside><p className="eyebrow">Request a {service==="move"?"move":"pickup"}</p><h1 className="mt-3 text-4xl font-black tracking-[-.04em]">A clearer start makes a smoother job.</h1><p className="mt-5 leading-7 text-slate">Share the essentials now. A future provider match and confirmed quote will happen only after MUBER reviews the request.</p></aside><BookingFlow service={service}/></div></main>}
+import { Logo } from "./logo";
+import { BookingFlow } from "./booking-flow";
+import { ServiceKind } from "@/lib/booking";
+export function BookingPage({ service }: { service: ServiceKind }) {
+  return (
+    <main className="min-h-screen bg-warm">
+      <header className="border-b border-navy/10 bg-white">
+        <div className="shell flex h-20 items-center justify-between">
+          <Logo />
+          <span
+            className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest ${service === "move" ? "bg-navy text-white" : "bg-orange text-white"}`}
+          >
+            {service === "move" ? "Move It" : "Remove It"}
+          </span>
+        </div>
+      </header>
+      <div className="shell grid gap-10 py-10 lg:grid-cols-[.65fr_1.35fr]">
+        <aside>
+          <p className="eyebrow">
+            Request a {service === "move" ? "move" : "pickup"}
+          </p>
+          <h1 className="mt-3 text-4xl font-black tracking-[-.04em]">
+            A clearer start makes a smoother job.
+          </h1>
+          <p className="mt-5 leading-7 text-slate">
+            Share the essentials now. A future provider match and confirmed
+            quote will happen only after MUBER reviews the request.
+          </p>
+        </aside>
+        <BookingFlow service={service} />
+      </div>
+    </main>
+  );
+}

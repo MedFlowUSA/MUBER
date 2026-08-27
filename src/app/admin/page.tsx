@@ -1,1 +1,14 @@
-import { EmptyState } from "@/components/empty-state"; import { RoleShell } from "@/components/role-shell"; export default function Page(){return <RoleShell role="admin"><p className="eyebrow">Admin workspace</p><h1 className="mt-2 mb-8 text-4xl font-black">Marketplace operations</h1><EmptyState title="Operations data will appear here" copy="Provider qualification, audit events, access controls, job review, and service recovery require verified admin authorization and production RLS."/></RoleShell>}
+import { EmptyState } from "@/components/empty-state";
+import { RoleShell } from "@/components/role-shell";
+export default function Page() {
+  return (
+    <RoleShell role="admin">
+      <p className="eyebrow">Admin workspace</p>
+      <h1 className="mt-2 mb-8 text-4xl font-black">Marketplace operations</h1>
+      <EmptyState
+        title="Operations data will appear here"
+        copy="Provider qualification, audit events, access controls, job review, and service recovery require verified admin authorization and production RLS."
+      />
+    </RoleShell>
+  );
+}

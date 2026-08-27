@@ -37,7 +37,8 @@ create trigger immutable_audit_events before update or delete on public.audit_ev
 -- Default deny: enabling RLS with no broad policies prevents accidental exposure.
 do $$ declare t text; begin foreach t in array array['profiles','organizations','organization_members','provider_companies','provider_credentials','vehicles','crews','crew_members','customers','addresses','jobs','job_stops','job_items','job_media','quotes','assignments','job_status_events','change_orders','completion_records','reviews','audit_events'] loop execute format('alter table public.%I enable row level security',t); end loop; end $$;
 create policy "profiles read self" on public.profiles for select using (id=auth.uid());
-create policy "profiles update self safe fields" on public.profiles for update using (id=auth.uid()) with check (id=auth.uid());
+-- Profile writes intentionally have no direct client policy. Customer-editable fields
+-- are changed through narrowly scoped functions so role can never be client-controlled.
 -- SECURITY DECISIONS REQUIRED BEFORE DEPLOYMENT:
 -- 1. Store effective roles in profiles vs JWT app_metadata, and who may change them.
 -- 2. Whether business accounts can create jobs for multiple contacts/locations.

@@ -1,4 +1,96 @@
-import Link from "next/link"; import { Clock3, Headphones, MapPinned, ReceiptText, RotateCcw } from "lucide-react"; import { RoleShell } from "@/components/role-shell"; import { customerFixture as data } from "@/fixtures/customer";
-export default function Page(){return <RoleShell role="customer"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="eyebrow">Customer dashboard</p><h1 className="mt-2 text-4xl font-black">Your jobs, one clear view.</h1><p className="mt-3 text-sm text-slate">Preview data below comes from a development fixture.</p></div><Link href="/book/move" className="btn-primary"><RotateCcw size={18}/> Book another job</Link></div><div className="mt-8 grid gap-5 xl:grid-cols-[1.2fr_.8fr]"><div className="space-y-5"><Section title="Upcoming jobs"><Job item={data.upcoming[0]}/></Section><Section title="Quote requests"><Job item={data.quotes[0]}/></Section><Section title="Past jobs"><Job item={data.past[0]}/></Section></div><div className="space-y-5"><Section title="Job status"><ol className="space-y-4">{data.timeline.map((x,i)=><li className="flex gap-3 text-sm" key={x}><span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-xs font-black ${i<2?"bg-success text-white":"bg-navy/10 text-slate"}`}>{i+1}</span><span className={i<2?"font-bold":"text-slate"}>{x}</span></li>)}</ol></Section><div className="grid grid-cols-2 gap-3">{[[MapPinned,"Saved addresses"],[ReceiptText,"Receipts"],[Headphones,"Support"],[Clock3,"Activity"]].map(([Icon,label])=><button key={String(label)} className="card flex flex-col items-start gap-4 text-left text-sm font-bold"><Icon className="text-orange" size={21}/>{String(label)}<span className="text-xs font-normal text-slate">Coming soon</span></button>)}</div></div></div></RoleShell>}
-function Section({title,children}:{title:string;children:React.ReactNode}){return <section className="card"><h2 className="mb-5 text-lg font-black">{title}</h2>{children}</section>}
-function Job({item}:{item:Record<string,string>}){return <div className="rounded-2xl bg-warm p-4"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-black text-orange">{item.id}</p><h3 className="mt-1 font-black">{item.service}</h3></div><span className="rounded-full bg-navy/10 px-3 py-1 text-xs font-bold">{item.status}</span></div><p className="mt-3 text-sm text-slate">{item.date}{item.from?` · ${item.from} → ${item.to}`:""}</p></div>}
+import Link from "next/link";
+import { RefreshCw, RotateCcw } from "lucide-react";
+import { redirect } from "next/navigation";
+import { RoleShell } from "@/components/role-shell";
+import { EmptyState } from "@/components/empty-state";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { logout } from "@/app/auth/actions";
+export default async function Page() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/auth/login?next=/customer");
+  const { data, error } = await supabase
+    .from("jobs")
+    .select(
+      "id,reference,service,status,preferred_start,time_window,created_at,job_stops(stop_type,addresses(city,region))",
+    )
+    .order("created_at", { ascending: false });
+  return (
+    <RoleShell role="customer">
+      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        <div>
+          <p className="eyebrow">Customer dashboard</p>
+          <h1 className="mt-2 text-4xl font-black">Your requests</h1>
+          <p className="mt-3 text-sm text-slate">Signed in as {user.email}</p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/customer" className="btn-ghost">
+            <RefreshCw size={17} />
+            Refresh
+          </Link>
+          <Link href="/book/move" className="btn-primary">
+            <RotateCcw size={17} />
+            Book again
+          </Link>
+          <form action={logout}>
+            <button className="btn-ghost">Sign out</button>
+          </form>
+        </div>
+      </div>
+      {error ? (
+        <div role="alert" className="card mt-8 text-red-700">
+          <h2 className="font-black">Requests could not be loaded</h2>
+          <p className="mt-2 text-sm">
+            Refresh the page or contact support. No sample data has been
+            substituted.
+          </p>
+        </div>
+      ) : !data?.length ? (
+        <div className="mt-8">
+          <EmptyState
+            title="No requests yet"
+            copy="Your submitted moving and junk-removal requests will appear here."
+            action={{ label: "Start a request", href: "/book/move" }}
+          />
+        </div>
+      ) : (
+        <div className="mt-8 grid gap-4">
+          {data.map((job) => (
+            <Link
+              href={`/customer/jobs/${job.id}`}
+              key={job.id}
+              className="card transition hover:-translate-y-0.5"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black text-orange">
+                    {job.reference}
+                  </p>
+                  <h2 className="mt-1 text-xl font-black">
+                    {job.service === "move" ? "Move It" : "Remove It"}
+                  </h2>
+                </div>
+                <span className="rounded-full bg-navy/10 px-3 py-1 text-xs font-bold capitalize">
+                  {job.status.replaceAll("_", " ")}
+                </span>
+              </div>
+              <p className="mt-4 text-sm text-slate">
+                Requested{" "}
+                {job.preferred_start
+                  ? new Date(job.preferred_start).toLocaleDateString()
+                  : "date pending"}{" "}
+                · {job.time_window || "Flexible"}
+              </p>
+              <p className="mt-2 text-sm font-bold">
+                Next: MUBER reviews your scope before quoting or provider
+                assignment.
+              </p>
+            </Link>
+          ))}
+        </div>
+      )}
+    </RoleShell>
+  );
+}
