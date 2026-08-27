@@ -6,9 +6,13 @@ export async function submitCompletion(form: FormData) {
   const { supabase } = await requireOperationalRole(["crew_lead"], "/crew");
   const assignment = String(form.get("assignment") || "");
   const rpc =
-    form.get("revision") === "1" ? "revise_completion" : "submit_completion";
+    form.get("revision") === "1"
+      ? "revise_completion"
+      : "finalize_completion_draft";
   const { error } = await supabase.rpc(rpc, {
-    p_assignment: assignment,
+    ...(rpc === "revise_completion"
+      ? { p_assignment: assignment }
+      : { p_draft: String(form.get("draft") || "") }),
     p_payload: {
       completion_at: new Date().toISOString(),
       completion_notes: String(form.get("completion_notes") || ""),
@@ -40,4 +44,18 @@ export async function submitCompletion(form: FormData) {
     );
   revalidatePath("/crew");
   redirect("/crew?advanced=1");
+}
+export async function startCompletionDraft(form: FormData) {
+  const { supabase } = await requireOperationalRole(["crew_lead"], "/crew");
+  const assignment = String(form.get("assignment") || "");
+  const { error } = await supabase.rpc("start_completion_draft", {
+    p_assignment: assignment,
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error)
+    redirect(
+      `/crew/completion/${assignment}?error=${encodeURIComponent(error.message)}`,
+    );
+  revalidatePath(`/crew/completion/${assignment}`);
+  redirect(`/crew/completion/${assignment}`);
 }

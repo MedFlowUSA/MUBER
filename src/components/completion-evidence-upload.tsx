@@ -4,9 +4,11 @@ import { createSupabaseBrowserClient } from "@/lib/supabase";
 export function CompletionEvidenceUpload({
   submission,
   job,
+  draft = false,
 }: {
   submission: string;
   job: string;
+  draft?: boolean;
 }) {
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
@@ -37,7 +39,10 @@ export function CompletionEvidenceUpload({
         .from("completion-media")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (stored.error) throw new Error("Evidence upload failed");
-      const response = await fetch(`/api/completions/${submission}/media`, {
+      const endpoint = draft
+        ? `/api/completion-drafts/${submission}/media`
+        : `/api/completions/${submission}/media`;
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
