@@ -23,12 +23,20 @@ export default async function Page() {
       />
       {(profile.role === "compliance_admin" ||
         profile.role === "super_admin") && (
-        <Link
-          href="/admin/providers"
-          className="mt-6 inline-flex rounded-xl bg-orange-600 px-5 py-3 font-bold text-white"
-        >
-          Review provider applications
-        </Link>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            href="/admin/providers"
+            className="inline-flex rounded-xl bg-orange-600 px-5 py-3 font-bold text-white"
+          >
+            Review provider applications
+          </Link>
+          <Link
+            href="/admin/credentials"
+            className="inline-flex rounded-xl border border-orange-600 px-5 py-3 font-bold text-orange-700"
+          >
+            Review credentials
+          </Link>
+        </div>
       )}
     </RoleShell>
   );
