@@ -4,12 +4,28 @@ import { notFound, redirect } from "next/navigation";
 import { RoleShell } from "@/components/role-shell";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { statusForCustomer } from "@/lib/job-status";
+import { acceptQuote } from "./actions";
+type CustomerQuote = {
+  id: string;
+  version: number;
+  service_subtotal_cents: number;
+  disposal_cents: number;
+  travel_cents: number;
+  other_cents: number;
+  total_cents: number;
+  customer_scope: string;
+  expires_at: string;
+  status: string;
+};
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string; accepted?: string }>;
 }) {
   const { id } = await params;
+  const query = await searchParams;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -23,6 +39,9 @@ export default async function Page({
     .eq("id", id)
     .maybeSingle();
   if (!job) notFound();
+  const { data: quotes } = await supabase.rpc("get_my_quote_versions", {
+    p_job: id,
+  });
   const media = await Promise.all(
     (job.job_media || []).map(async (item) => {
       const { data } = await supabase.storage
@@ -47,6 +66,76 @@ export default async function Page({
           {statusForCustomer(job.status).label}
         </span>
       </div>
+      {query.error && (
+        <p className="mt-5 rounded-xl bg-red-50 p-4 text-red-800">
+          {query.error}
+        </p>
+      )}
+      {query.accepted && (
+        <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
+          Quote accepted. No payment has been collected.
+        </p>
+      )}
+      {Boolean(quotes?.length) && (
+        <section className="card mt-8">
+          <h2 className="text-xl font-black">Your quote</h2>
+          {(quotes as CustomerQuote[] | null)?.map((quote) => (
+            <article key={quote.id} className="mt-5 rounded-2xl bg-warm p-5">
+              <div className="flex flex-wrap justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black text-orange">
+                    VERSION {quote.version}
+                  </p>
+                  <p className="mt-1 text-3xl font-black">
+                    ${(quote.total_cents / 100).toFixed(2)}
+                  </p>
+                </div>
+                <span className="text-xs font-bold uppercase">
+                  {quote.status}
+                </span>
+              </div>
+              <p className="mt-4 whitespace-pre-wrap">{quote.customer_scope}</p>
+              <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <dt>Service</dt>
+                  <dd className="font-bold">
+                    ${(quote.service_subtotal_cents / 100).toFixed(2)}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Disposal</dt>
+                  <dd className="font-bold">
+                    ${(quote.disposal_cents / 100).toFixed(2)}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Travel</dt>
+                  <dd className="font-bold">
+                    ${(quote.travel_cents / 100).toFixed(2)}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Other</dt>
+                  <dd className="font-bold">
+                    ${(quote.other_cents / 100).toFixed(2)}
+                  </dd>
+                </div>
+              </dl>
+              <p className="mt-4 text-sm text-slate">
+                Expires {new Date(quote.expires_at).toLocaleString()}. Accepting
+                confirms the quote only; payment is not collected.
+              </p>
+              {quote.status === "sent" && (
+                <form action={acceptQuote} className="mt-5">
+                  <input type="hidden" name="job" value={job.id} />
+                  <input type="hidden" name="quote" value={quote.id} />
+                  <button className="btn-primary">Accept quote</button>
+                </form>
+              )}
+            </article>
+          ))}
+        </section>
+      )}
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
         <section className="card">
           <h2 className="text-xl font-black">Submitted scope</h2>

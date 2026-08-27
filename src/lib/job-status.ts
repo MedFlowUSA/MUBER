@@ -77,7 +77,6 @@ export const dispatchCommands: Record<
     { label: "Cancel request", command: "cancel", reason: true },
   ],
   quote_preparation: [
-    { label: "Mark quote sent", command: "mark_quote_sent" },
     { label: "Place on incident hold", command: "incident_hold", reason: true },
   ],
   quote_accepted: [

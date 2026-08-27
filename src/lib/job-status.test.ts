@@ -7,6 +7,7 @@ describe("operational job controls", () => {
       .flat()
       .map((item) => item.command);
     expect(commands).not.toContain("mark_quote_accepted");
+    expect(commands).not.toContain("mark_quote_sent");
   });
 
   it("requires reasons for sensitive dispatcher commands", () => {

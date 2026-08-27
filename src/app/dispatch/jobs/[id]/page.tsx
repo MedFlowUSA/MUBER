@@ -4,7 +4,12 @@ import { notFound } from "next/navigation";
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
 import { dispatchCommands } from "@/lib/job-status";
-import { saveJobReview, transitionJob } from "../../actions";
+import {
+  createQuote,
+  saveJobReview,
+  sendQuote,
+  transitionJob,
+} from "../../actions";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -12,6 +17,8 @@ type Props = {
     error?: string;
     updated?: string;
     reviewed?: string;
+    quote?: string;
+    sent?: string;
   }>;
 };
 const first = <T,>(value: T | T[] | null) =>
@@ -26,7 +33,7 @@ export default async function DispatchJob({ params, searchParams }: Props) {
   const { data: job } = await supabase
     .from("jobs")
     .select(
-      "id,reference,service,status,preferred_start,time_window,description,created_at,customers(full_name,email,phone),job_stops(stop_order,stop_type,addresses(line1,line2,city,region,postal_code,access_notes)),job_items(category,description,quantity,heavy),job_media(id,storage_path,mime_type),internal_job_reviews(complexity,risk_flags,required_crew_size,required_vehicle_class,credential_requirements,internal_notes),job_operational_events(from_status,to_status,command,reason,occurred_at)",
+      "id,reference,service,status,preferred_start,time_window,description,created_at,customers(full_name,email,phone),job_stops(stop_order,stop_type,addresses(line1,line2,city,region,postal_code,access_notes)),job_items(category,description,quantity,heavy),job_media(id,storage_path,mime_type),internal_job_reviews(complexity,risk_flags,required_crew_size,required_vehicle_class,credential_requirements,internal_notes),job_operational_events(from_status,to_status,command,reason,occurred_at),quote_versions(id,version,service_subtotal_cents,disposal_cents,travel_cents,other_cents,total_cents,currency,customer_scope,internal_notes,estimated_provider_compensation_cents,expires_at,status,created_at)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -54,7 +61,7 @@ export default async function DispatchJob({ params, searchParams }: Props) {
           {query.error}
         </p>
       )}
-      {(query.updated || query.reviewed) && (
+      {(query.updated || query.reviewed || query.quote || query.sent) && (
         <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
           Operational record updated and audited.
         </p>
@@ -165,6 +172,103 @@ export default async function DispatchJob({ params, searchParams }: Props) {
           </form>
         </section>
       </div>
+      {job.status === "quote_preparation" && (
+        <section className="card mt-5">
+          <h2 className="text-xl font-black">Prepare quote</h2>
+          <p className="mt-2 text-sm text-slate">
+            Amounts are converted to integer cents and totaled by the database.
+            Creating a version does not send it.
+          </p>
+          <form action={createQuote} className="mt-5 grid gap-3 md:grid-cols-2">
+            <input type="hidden" name="job" value={job.id} />
+            {[
+              ["service", "Service subtotal"],
+              ["disposal", "Disposal estimate"],
+              ["travel", "Travel"],
+              ["other", "Other approved charges"],
+              ["provider", "Internal provider compensation estimate"],
+            ].map(([name, label]) => (
+              <label key={name} className="text-sm font-bold">
+                {label}
+                <input
+                  name={name}
+                  required={name !== "provider"}
+                  defaultValue="0.00"
+                  inputMode="decimal"
+                  className="mt-1 w-full rounded-xl border px-4 py-3 font-normal"
+                />
+              </label>
+            ))}
+            <label className="text-sm font-bold">
+              Expires
+              <input
+                name="expires"
+                type="datetime-local"
+                required
+                className="mt-1 w-full rounded-xl border px-4 py-3 font-normal"
+              />
+            </label>
+            <textarea
+              name="scope"
+              required
+              minLength={10}
+              placeholder="Customer-facing scope"
+              className="min-h-28 rounded-xl border px-4 py-3 md:col-span-2"
+            />
+            <textarea
+              name="internal_notes"
+              placeholder="Internal calculation notes"
+              className="min-h-24 rounded-xl border px-4 py-3 md:col-span-2"
+            />
+            <button className="rounded-xl bg-orange-600 px-5 py-3 font-bold text-white md:col-span-2">
+              Create quote version
+            </button>
+          </form>
+        </section>
+      )}
+      {Boolean(job.quote_versions?.length) && (
+        <section className="card mt-5">
+          <h2 className="text-xl font-black">Quote history</h2>
+          <div className="mt-5 grid gap-3">
+            {job.quote_versions
+              .sort((a, b) => b.version - a.version)
+              .map((quote) => (
+                <article key={quote.id} className="rounded-2xl border p-5">
+                  <div className="flex flex-wrap justify-between gap-3">
+                    <div>
+                      <h3 className="font-black">
+                        Version {quote.version} · $
+                        {(quote.total_cents / 100).toFixed(2)}
+                      </h3>
+                      <p className="mt-1 text-sm text-slate">
+                        Expires {new Date(quote.expires_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <span className="text-xs font-bold uppercase">
+                      {quote.status.replaceAll("_", " ")}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm">{quote.customer_scope}</p>
+                  {quote.internal_notes && (
+                    <p className="mt-2 text-sm text-red-800">
+                      Internal: {quote.internal_notes}
+                    </p>
+                  )}
+                  {quote.status === "ready_for_review" &&
+                    job.status === "quote_preparation" && (
+                      <form action={sendQuote} className="mt-4">
+                        <input type="hidden" name="job" value={job.id} />
+                        <input type="hidden" name="quote" value={quote.id} />
+                        <button className="rounded-xl bg-navy px-5 py-3 font-bold text-white">
+                          Send version {quote.version} to customer
+                        </button>
+                      </form>
+                    )}
+                </article>
+              ))}
+          </div>
+        </section>
+      )}
       <section className="card mt-5">
         <h2 className="text-xl font-black">Permitted state commands</h2>
         <div className="mt-5 grid gap-3">
