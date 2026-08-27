@@ -101,3 +101,13 @@ Required settings:
 
 Production promotion is prohibited while any required item is `blocked` or
 `failed`.
+
+## Live customer isolation harness
+
+After the exact Preview callback and reset URLs are approved, run
+`npm run test:live-security` with `RUN_LIVE_E2E=1`, `E2E_SITE_URL`, and the two
+browser-safe Supabase variables supplied only through the local environment.
+The harness creates disposable verified customers and checks booking, job
+media, conversations, conversation attachments, cross-customer denial, and
+anonymous denial. It prints assertion names only. Do not redirect debug output
+or HTTP response bodies into a repository file.

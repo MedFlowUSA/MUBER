@@ -3,9 +3,15 @@ import crypto from "node:crypto";
 if (process.env.RUN_LIVE_E2E !== "1")
   throw new Error("Set RUN_LIVE_E2E=1 to run live verification");
 const base = process.env.NEXT_PUBLIC_SUPABASE_URL,
-  key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-if (!base || !key)
+  key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  site = process.env.E2E_SITE_URL;
+if (!base || !key || !site)
   throw new Error("Missing browser-safe Supabase configuration");
+const deployment = new URL(site);
+if (deployment.protocol !== "https:")
+  throw new Error("E2E_SITE_URL must use HTTPS");
+const callback = new URL("/auth/callback", deployment).toString();
+const resetRoute = new URL("/auth/reset", deployment).toString();
 const results = [];
 const assert = (name, value) => {
   if (!value) throw new Error(`FAILED: ${name}`);
@@ -68,7 +74,7 @@ async function customer() {
   const box = await mailbox();
   const password = crypto.randomBytes(24).toString("base64url") + "A1!";
   const signup = await json(
-    `${base}/auth/v1/signup?redirect_to=${encodeURIComponent("https://muber-m2ej2e7r2-manuel-rodriguezs-projects-f5946c44.vercel.app/auth/callback")}`,
+    `${base}/auth/v1/signup?redirect_to=${encodeURIComponent(callback)}`,
     {
       method: "POST",
       headers: { apikey: key, "content-type": "application/json" },
@@ -98,9 +104,7 @@ async function customer() {
     const location = verified.headers.get("location") || "";
     assert(
       "email verification redirect is approved",
-      location.startsWith(
-        "https://muber-m2ej2e7r2-manuel-rodriguezs-projects-f5946c44.vercel.app/auth/callback",
-      ),
+      location.startsWith(callback),
     );
     const fragment = new URL(location).hash.slice(1);
     const params = new URLSearchParams(fragment);
@@ -246,6 +250,67 @@ try {
     "authorized signed image retrieval",
     signed.r.ok && signed.body.signedURL,
   );
+  const posted = await json(`${base}/rest/v1/rpc/post_job_message`, {
+    method: "POST",
+    headers: apiHeaders(a.access),
+    body: JSON.stringify({
+      p_job: job.job_id,
+      p_channel: "customer_dispatch",
+      p_body: "Synthetic certification conversation message",
+      p_request_id: crypto.randomUUID(),
+    }),
+  });
+  assert(
+    "customer A posts owned conversation message",
+    posted.r.ok && posted.body,
+  );
+  const ownMessages = await json(`${base}/rest/v1/rpc/get_job_messages_page`, {
+    method: "POST",
+    headers: apiHeaders(a.access),
+    body: JSON.stringify({ p_job: job.job_id, p_page: 1, p_page_size: 50 }),
+  });
+  assert(
+    "customer A reads owned conversation",
+    ownMessages.r.ok && ownMessages.body.length === 1,
+  );
+  const attachmentPath = `${a.userId}/${job.job_id}/${crypto.randomUUID()}.png`;
+  const attachmentUpload = await fetch(
+    `${base}/storage/v1/object/conversation-attachments/${attachmentPath}`,
+    {
+      method: "POST",
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${a.access}`,
+        "content-type": "image/png",
+        "x-upsert": "false",
+      },
+      body: png,
+    },
+  );
+  assert(
+    "customer A uploads private conversation attachment",
+    attachmentUpload.ok,
+  );
+  const attachment = await json(
+    `${base}/rest/v1/rpc/post_job_message_attachment`,
+    {
+      method: "POST",
+      headers: apiHeaders(a.access),
+      body: JSON.stringify({
+        p_job: job.job_id,
+        p_channel: "customer_dispatch",
+        p_body: "Synthetic private attachment",
+        p_path: attachmentPath,
+        p_mime: "image/png",
+        p_size: png.length,
+        p_request_id: crypto.randomUUID(),
+      }),
+    },
+  );
+  assert(
+    "customer A registers private conversation attachment",
+    attachment.r.ok && attachment.body,
+  );
   for (const [table, query] of [
     ["profiles", `id=eq.${a.userId}`],
     ["customers", `profile_id=eq.${a.userId}`],
@@ -270,6 +335,54 @@ try {
     },
   );
   assert("cross-customer signed URL denial", !signedDenied.r.ok);
+  const otherMessages = await json(
+    `${base}/rest/v1/rpc/get_job_messages_page`,
+    {
+      method: "POST",
+      headers: apiHeaders(b.access),
+      body: JSON.stringify({ p_job: job.job_id, p_page: 1, p_page_size: 50 }),
+    },
+  );
+  assert("cross-customer conversation RPC denial", !otherMessages.r.ok);
+  const otherMessageRows = await json(
+    `${base}/rest/v1/job_messages?job_id=eq.${job.job_id}&select=id`,
+    { headers: apiHeaders(b.access) },
+  );
+  assert(
+    "cross-customer message row denial",
+    otherMessageRows.r.ok && otherMessageRows.body.length === 0,
+  );
+  const otherAttachmentRows = await json(
+    `${base}/rest/v1/job_message_attachments?job_id=eq.${job.job_id}&select=id`,
+    { headers: apiHeaders(b.access) },
+  );
+  assert(
+    "cross-customer attachment metadata denial",
+    otherAttachmentRows.r.ok && otherAttachmentRows.body.length === 0,
+  );
+  const otherPost = await json(`${base}/rest/v1/rpc/post_job_message`, {
+    method: "POST",
+    headers: apiHeaders(b.access),
+    body: JSON.stringify({
+      p_job: job.job_id,
+      p_channel: "customer_dispatch",
+      p_body: "Forbidden cross-customer message",
+      p_request_id: crypto.randomUUID(),
+    }),
+  });
+  assert("cross-customer message creation denial", !otherPost.r.ok);
+  const attachmentSignedDenied = await json(
+    `${base}/storage/v1/object/sign/conversation-attachments/${attachmentPath}`,
+    {
+      method: "POST",
+      headers: apiHeaders(b.access),
+      body: JSON.stringify({ expiresIn: 60 }),
+    },
+  );
+  assert(
+    "cross-customer attachment signing denial",
+    !attachmentSignedDenied.r.ok,
+  );
   const deleteDenied = await fetch(
     `${base}/storage/v1/object/job-media/${path}`,
     {
@@ -298,7 +411,14 @@ try {
     "cross-customer job deletion denial",
     deleteJobDenied.ok && (await deleteJobDenied.json()).length === 0,
   );
-  for (const table of ["profiles", "customers", "jobs", "job_media"]) {
+  for (const table of [
+    "profiles",
+    "customers",
+    "jobs",
+    "job_media",
+    "job_messages",
+    "job_message_attachments",
+  ]) {
     const anon = await json(`${base}/rest/v1/${table}?select=*`, {
       headers: apiHeaders(key),
     });
@@ -318,7 +438,7 @@ try {
   );
   assert("invalid file rejection", !bad.ok);
   const reset = await fetch(
-    `${base}/auth/v1/recover?redirect_to=${encodeURIComponent("https://muber-m2ej2e7r2-manuel-rodriguezs-projects-f5946c44.vercel.app/auth/reset")}`,
+    `${base}/auth/v1/recover?redirect_to=${encodeURIComponent(resetRoute)}`,
     {
       method: "POST",
       headers: { apikey: key, "content-type": "application/json" },

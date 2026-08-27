@@ -339,4 +339,15 @@ describe("portal separation", () => {
     expect(migration).toContain("overdue_reply_threads");
     expect(migration).toContain("interval '4 hours'");
   });
+  it("keeps live certification deployment-specific and secret-free", () => {
+    const script = fs.readFileSync(
+      path.join(process.cwd(), "scripts/verify-phase15-live.mjs"),
+      "utf8",
+    );
+    expect(script).toContain("E2E_SITE_URL");
+    expect(script).toContain("cross-customer conversation RPC denial");
+    expect(script).toContain("cross-customer attachment signing denial");
+    expect(script).toContain("job_message_attachments");
+    expect(script).not.toContain("muber-m2ej2e7r2");
+  });
 });
