@@ -84,8 +84,8 @@ export function Footer() {
         </nav>
       </div>
       <div className="shell mt-10 border-t border-white/10 pt-6 text-xs text-white/50">
-        © {new Date().getFullYear()} MUBER. Independent providers are not MUBER
-        employees.
+        © {new Date().getFullYear()} MUBER Enterprises LLC · Redlands,
+        California 92313. Independent providers are not MUBER employees.
       </div>
     </footer>
   );

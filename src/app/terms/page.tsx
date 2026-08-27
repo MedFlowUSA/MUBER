@@ -15,6 +15,10 @@ export default function TermsPage() {
           least 18 and legally able to enter a binding agreement. If acting for
           a company, you represent that you can bind it.
         </p>
+        <p>
+          MUBER is operated by MUBER Enterprises LLC, located in Redlands,
+          California 92313.
+        </p>
       </LegalSection>
       <LegalSection id="role" title="2. MUBER’s role">
         <p>

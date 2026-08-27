@@ -26,8 +26,14 @@ export default async function Page() {
         />
       </div>
       <Link
+        href="/provider/jobs"
+        className="mt-6 inline-flex rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white"
+      >
+        Schedule accepted jobs
+      </Link>
+      <Link
         href="/provider/offers"
-        className="mt-6 inline-flex rounded-xl bg-navy px-5 py-3 font-bold text-white"
+        className="mt-6 ml-3 inline-flex rounded-xl bg-navy px-5 py-3 font-bold text-white"
       >
         Review job offers
       </Link>

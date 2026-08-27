@@ -94,7 +94,6 @@ export const dispatchCommands: Record<
     },
   ],
   assigned: [
-    { label: "Confirm crew", command: "confirm_crew" },
     {
       label: "Require reassignment",
       command: "require_reassignment",
