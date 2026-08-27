@@ -5,7 +5,12 @@ import { RoleShell } from "@/components/role-shell";
 import { IncidentEvidenceUpload } from "@/components/incident-evidence-upload";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { statusForCustomer } from "@/lib/job-status";
-import { acceptQuote, reportIncident, respondToCompletion } from "./actions";
+import {
+  acceptQuote,
+  reportIncident,
+  respondToCompletion,
+  respondToInformationRequest,
+} from "./actions";
 type CustomerQuote = {
   id: string;
   version: number;
@@ -28,6 +33,7 @@ export default async function Page({
     accepted?: string;
     completion_response?: string;
     incident_reported?: string;
+    information_sent?: string;
   }>;
 }) {
   const { id } = await params;
@@ -63,6 +69,13 @@ export default async function Page({
     )
     .eq("job_id", id)
     .order("reported_at", { ascending: false });
+  const { data: informationRequests } = await supabase
+    .from("job_information_requests")
+    .select(
+      "id,prompt,status,created_at,job_information_responses(response,created_at)",
+    )
+    .eq("job_id", id)
+    .order("created_at", { ascending: false });
   const media = await Promise.all(
     (job.job_media || []).map(async (item) => {
       const { data } = await supabase.storage
@@ -108,6 +121,55 @@ export default async function Page({
           Your report was recorded for MUBER review. If anyone is in immediate
           danger, call 911.
         </p>
+      )}
+      {query.information_sent && (
+        <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
+          Your response was sent. MUBER will continue reviewing your request.
+        </p>
+      )}
+      {Boolean(informationRequests?.length) && (
+        <section className="card mt-8">
+          <p className="eyebrow">Information requests</p>
+          <h2 className="mt-2 text-2xl font-black">Messages from MUBER</h2>
+          <div className="mt-5 grid gap-4">
+            {informationRequests?.map((item) => (
+              <article key={item.id} className="rounded-2xl border p-5">
+                <div className="flex justify-between gap-3">
+                  <strong>{item.prompt}</strong>
+                  <span className="text-xs font-bold uppercase">
+                    {item.status}
+                  </span>
+                </div>
+                {item.job_information_responses?.map((response) => (
+                  <p
+                    key={response.created_at}
+                    className="mt-3 rounded-xl bg-warm p-3"
+                  >
+                    <strong>Your response:</strong> {response.response}
+                  </p>
+                ))}
+                {item.status === "open" && (
+                  <form
+                    action={respondToInformationRequest}
+                    className="mt-4 grid gap-3"
+                  >
+                    <input type="hidden" name="job" value={job.id} />
+                    <input type="hidden" name="request" value={item.id} />
+                    <textarea
+                      name="response"
+                      required
+                      minLength={10}
+                      maxLength={5000}
+                      placeholder="Provide the requested details"
+                      className="min-h-28 rounded-xl border p-3"
+                    />
+                    <button className="btn-primary">Send response</button>
+                  </form>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
       )}
       {completion && (
         <section className="card mt-8">

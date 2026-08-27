@@ -77,20 +77,8 @@ export const dispatchCommands: Record<
   string,
   { label: string; command: string; reason?: boolean }[]
 > = {
-  submitted: [
-    { label: "Start review", command: "start_review" },
-    {
-      label: "Request information",
-      command: "request_customer_information",
-      reason: true,
-    },
-  ],
+  submitted: [{ label: "Start review", command: "start_review" }],
   needs_review: [
-    {
-      label: "Request information",
-      command: "request_customer_information",
-      reason: true,
-    },
     { label: "Begin quote", command: "begin_quote" },
     { label: "Place on incident hold", command: "incident_hold", reason: true },
   ],

@@ -72,3 +72,19 @@ export async function reportIncident(form: FormData) {
   revalidatePath(`/customer/jobs/${job}`);
   redirect(`/customer/jobs/${job}?incident_reported=1`);
 }
+export async function respondToInformationRequest(form: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const job = String(form.get("job") || "");
+  const { error } = await supabase.rpc("respond_to_job_information_request", {
+    p_request: String(form.get("request") || ""),
+    p_response: String(form.get("response") || ""),
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error)
+    redirect(
+      `/customer/jobs/${job}?error=${encodeURIComponent(error.message)}`,
+    );
+  revalidatePath("/customer");
+  revalidatePath(`/customer/jobs/${job}`);
+  redirect(`/customer/jobs/${job}?information_sent=1`);
+}

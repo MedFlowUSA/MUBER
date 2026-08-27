@@ -80,4 +80,19 @@ describe("portal separation", () => {
     expect(migration).toContain("provider.availability_set");
     expect(migration).not.toContain("p_provider uuid,p_date");
   });
+
+  it("keeps customer information requests immutable and ownership-scoped", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0031_customer_information_requests.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("public.owns_job(v_item.job_id)");
+    expect(migration).toContain("immutable_job_information_responses");
+    expect(migration).toContain("job_information.requested");
+    expect(migration).toContain("job_information.responded");
+    expect(migration).toContain("update public.jobs set status='needs_review'");
+  });
 });

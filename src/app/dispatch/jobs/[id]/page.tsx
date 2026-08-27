@@ -7,6 +7,7 @@ import { dispatchCommands } from "@/lib/job-status";
 import {
   createProviderOffer,
   createQuote,
+  requestCustomerInformation,
   saveJobReview,
   sendQuote,
   transitionJob,
@@ -21,6 +22,7 @@ type Props = {
     quote?: string;
     sent?: string;
     offered?: string;
+    information_requested?: string;
   }>;
 };
 const first = <T,>(value: T | T[] | null) =>
@@ -67,6 +69,13 @@ export default async function DispatchJob({ params, searchParams }: Props) {
   const review = job.internal_job_reviews?.[0],
     commands = dispatchCommands[job.status] || [];
   const customer = first(job.customers);
+  const { data: informationRequests } = await supabase
+    .from("job_information_requests")
+    .select(
+      "id,prompt,internal_context,status,created_at,job_information_responses(response,created_at)",
+    )
+    .eq("job_id", job.id)
+    .order("created_at", { ascending: false });
   const [{ data: baseEligibility }, { data: scheduleEligibility }] =
     job.status === "ready_for_matching"
       ? await Promise.all([
@@ -110,6 +119,11 @@ export default async function DispatchJob({ params, searchParams }: Props) {
         query.offered) && (
         <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
           Operational record updated and audited.
+        </p>
+      )}
+      {query.information_requested && (
+        <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
+          Customer information request sent and audited.
         </p>
       )}
       <div className="mt-5 flex flex-wrap justify-between gap-4">
@@ -409,6 +423,54 @@ export default async function DispatchJob({ params, searchParams }: Props) {
           </div>
         </section>
       )}
+      <section className="card mt-5">
+        <h2 className="text-xl font-black">Customer information requests</h2>
+        {["submitted", "needs_review"].includes(job.status) && (
+          <form action={requestCustomerInformation} className="mt-5 grid gap-3">
+            <input type="hidden" name="job" value={job.id} />
+            <textarea
+              name="prompt"
+              required
+              minLength={10}
+              maxLength={2000}
+              placeholder="Specific question the customer will see"
+              className="min-h-24 rounded-xl border p-3"
+            />
+            <textarea
+              name="internal_context"
+              maxLength={4000}
+              placeholder="Internal context — never shown to the customer"
+              className="min-h-20 rounded-xl border p-3"
+            />
+            <button className="btn-primary">Send information request</button>
+          </form>
+        )}
+        <div className="mt-5 grid gap-3">
+          {(informationRequests || []).map((item) => (
+            <article key={item.id} className="rounded-xl bg-warm p-4">
+              <div className="flex justify-between gap-3">
+                <strong>{item.prompt}</strong>
+                <span className="text-xs font-bold uppercase">
+                  {item.status}
+                </span>
+              </div>
+              {item.internal_context && (
+                <p className="mt-2 text-sm text-slate">
+                  <strong>Internal:</strong> {item.internal_context}
+                </p>
+              )}
+              {item.job_information_responses?.map((response) => (
+                <p
+                  key={response.created_at}
+                  className="mt-3 rounded-xl bg-white p-3"
+                >
+                  <strong>Customer response:</strong> {response.response}
+                </p>
+              ))}
+            </article>
+          ))}
+        </div>
+      </section>
       <section className="card mt-5">
         <h2 className="text-xl font-black">Permitted state commands</h2>
         <div className="mt-5 grid gap-3">
