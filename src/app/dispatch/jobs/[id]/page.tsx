@@ -5,6 +5,7 @@ import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
 import { dispatchCommands } from "@/lib/job-status";
 import {
+  createProviderOffer,
   createQuote,
   saveJobReview,
   sendQuote,
@@ -19,6 +20,7 @@ type Props = {
     reviewed?: string;
     quote?: string;
     sent?: string;
+    offered?: string;
   }>;
 };
 const first = <T,>(value: T | T[] | null) =>
@@ -51,6 +53,10 @@ export default async function DispatchJob({ params, searchParams }: Props) {
   const review = job.internal_job_reviews?.[0],
     commands = dispatchCommands[job.status] || [];
   const customer = first(job.customers);
+  const { data: eligibility } =
+    job.status === "ready_for_matching"
+      ? await supabase.rpc("eligible_providers_for_job", { p_job: job.id })
+      : { data: null };
   return (
     <RoleShell role="dispatch">
       <Link href="/dispatch" className="text-sm font-bold text-orange-600">
@@ -61,7 +67,11 @@ export default async function DispatchJob({ params, searchParams }: Props) {
           {query.error}
         </p>
       )}
-      {(query.updated || query.reviewed || query.quote || query.sent) && (
+      {(query.updated ||
+        query.reviewed ||
+        query.quote ||
+        query.sent ||
+        query.offered) && (
         <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
           Operational record updated and audited.
         </p>
@@ -266,6 +276,97 @@ export default async function DispatchJob({ params, searchParams }: Props) {
                     )}
                 </article>
               ))}
+          </div>
+        </section>
+      )}
+      {job.status === "ready_for_matching" && (
+        <section className="card mt-5">
+          <h2 className="text-xl font-black">Manual provider eligibility</h2>
+          <p className="mt-2 text-sm text-slate">
+            Approval, service, territory setup, availability, vehicle, crew,
+            disposal capability, and verified unexpired credentials are checked.
+            No automated ranking is used.
+          </p>
+          <div className="mt-5 grid gap-3">
+            {(eligibility || []).map(
+              (provider: {
+                provider_company_id: string;
+                legal_name: string;
+                eligible: boolean;
+                reasons: string[];
+                vehicle_fit: boolean;
+                crew_fit: boolean;
+                credential_fit: boolean;
+              }) => (
+                <article
+                  key={provider.provider_company_id}
+                  className={`rounded-2xl border p-5 ${provider.eligible ? "border-emerald-300" : "border-slate-200 bg-slate-50"}`}
+                >
+                  <div className="flex flex-wrap justify-between gap-3">
+                    <h3 className="font-black">{provider.legal_name}</h3>
+                    <span
+                      className={`text-xs font-bold uppercase ${provider.eligible ? "text-emerald-700" : "text-red-700"}`}
+                    >
+                      {provider.eligible ? "eligible" : "excluded"}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-slate">
+                    Vehicle: {provider.vehicle_fit ? "fit" : "blocked"} · Crew:{" "}
+                    {provider.crew_fit ? "fit" : "blocked"} · Credentials:{" "}
+                    {provider.credential_fit ? "verified" : "blocked"}
+                  </p>
+                  {provider.reasons.length > 0 && (
+                    <ul className="mt-3 list-disc pl-5 text-sm text-red-700">
+                      {provider.reasons.map((reason) => (
+                        <li key={reason}>{reason}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {provider.eligible && (
+                    <form
+                      action={createProviderOffer}
+                      className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]"
+                    >
+                      <input type="hidden" name="job" value={job.id} />
+                      <input
+                        type="hidden"
+                        name="provider"
+                        value={provider.provider_company_id}
+                      />
+                      <label className="text-sm font-bold">
+                        Estimated minutes
+                        <input
+                          name="duration"
+                          type="number"
+                          min="15"
+                          max="1440"
+                          required
+                          defaultValue="120"
+                          className="mt-1 w-full rounded-xl border px-3 py-2 font-normal"
+                        />
+                      </label>
+                      <label className="text-sm font-bold">
+                        Offer expires
+                        <input
+                          name="expires"
+                          type="datetime-local"
+                          required
+                          className="mt-1 w-full rounded-xl border px-3 py-2 font-normal"
+                        />
+                      </label>
+                      <button className="self-end rounded-xl bg-orange-600 px-5 py-3 font-bold text-white">
+                        Send exclusive offer
+                      </button>
+                    </form>
+                  )}
+                </article>
+              ),
+            )}
+            {!eligibility?.length && (
+              <p className="text-sm text-slate">
+                No approved providers are configured yet.
+              </p>
+            )}
           </div>
         </section>
       )}

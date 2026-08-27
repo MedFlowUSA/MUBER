@@ -137,3 +137,30 @@ export async function sendQuote(form: FormData) {
   revalidatePath(`/dispatch/jobs/${job}`);
   redirect(`/dispatch/jobs/${job}?sent=1`);
 }
+
+export async function createProviderOffer(form: FormData) {
+  const { supabase } = await requireOperationalRole(
+    ["dispatcher", "super_admin"],
+    "/dispatch",
+  );
+  const job = String(form.get("job") || "");
+  const provider = String(form.get("provider") || "");
+  const expiration = new Date(String(form.get("expires") || ""));
+  const duration = Number(form.get("duration") || 0);
+  if (Number.isNaN(expiration.getTime()) || !Number.isInteger(duration))
+    redirect(`/dispatch/jobs/${job}?error=Invalid%20offer%20timing`);
+  const { error } = await supabase.rpc("create_provider_offer", {
+    p_job: job,
+    p_provider: provider,
+    p_duration_minutes: duration,
+    p_expires: expiration.toISOString(),
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error)
+    redirect(
+      `/dispatch/jobs/${job}?error=${encodeURIComponent(error.message)}`,
+    );
+  revalidatePath("/dispatch");
+  revalidatePath(`/dispatch/jobs/${job}`);
+  redirect(`/dispatch/jobs/${job}?offered=1`);
+}
