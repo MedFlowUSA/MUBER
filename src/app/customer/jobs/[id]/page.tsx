@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { RoleShell } from "@/components/role-shell";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { statusForCustomer } from "@/lib/job-status";
 export default async function Page({
   params,
 }: {
@@ -43,7 +44,7 @@ export default async function Page({
           </h1>
         </div>
         <span className="rounded-full bg-orange/10 px-4 py-2 text-sm font-black capitalize text-orange">
-          {job.status.replaceAll("_", " ")}
+          {statusForCustomer(job.status).label}
         </span>
       </div>
       <div className="mt-8 grid gap-5 lg:grid-cols-2">

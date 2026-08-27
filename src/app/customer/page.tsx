@@ -5,6 +5,7 @@ import { RoleShell } from "@/components/role-shell";
 import { EmptyState } from "@/components/empty-state";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { logout } from "@/app/auth/actions";
+import { statusForCustomer } from "@/lib/job-status";
 export default async function Page() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -73,7 +74,7 @@ export default async function Page() {
                   </h2>
                 </div>
                 <span className="rounded-full bg-navy/10 px-3 py-1 text-xs font-bold capitalize">
-                  {job.status.replaceAll("_", " ")}
+                  {statusForCustomer(job.status).label}
                 </span>
               </div>
               <p className="mt-4 text-sm text-slate">
@@ -84,8 +85,7 @@ export default async function Page() {
                 · {job.time_window || "Flexible"}
               </p>
               <p className="mt-2 text-sm font-bold">
-                Next: MUBER reviews your scope before quoting or provider
-                assignment.
+                Next: {statusForCustomer(job.status).next}
               </p>
             </Link>
           ))}
