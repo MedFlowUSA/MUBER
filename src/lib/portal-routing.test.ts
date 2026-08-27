@@ -168,4 +168,22 @@ describe("portal separation", () => {
     expect(migration).toContain("'payment_action',false");
     expect(migration).not.toContain("delete from public.jobs");
   });
+
+  it("enforces provider suspension below the eligibility UI", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0036_provider_suspension_controls.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("enforce_provider_offer_status");
+    expect(migration).toContain("enforce_provider_assignment_status");
+    expect(migration).toContain("status='approved'");
+    expect(migration).toContain("active_job_count");
+    expect(migration).toContain("immutable_provider_status_events");
+    expect(migration).toContain("'payment_action',false");
+    expect(migration).not.toContain("delete from public.provider_companies");
+    expect(migration).not.toContain("delete from public.assignments");
+  });
 });

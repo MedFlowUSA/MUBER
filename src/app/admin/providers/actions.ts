@@ -40,3 +40,37 @@ export async function reviewProviderApplication(form: FormData) {
   revalidatePath("/admin/providers");
   redirect("/admin/providers?reviewed=1");
 }
+
+export async function manageProviderStatus(form: FormData) {
+  const { supabase } = await requireOperationalRole(
+    ["compliance_admin", "super_admin"],
+    "/admin/providers",
+  );
+  const provider = String(form.get("provider") || "");
+  const action = String(form.get("provider_action") || "");
+  if (
+    !/^[0-9a-f-]{36}$/i.test(provider) ||
+    !["suspend", "reactivate"].includes(action)
+  )
+    redirect("/admin/providers?error=Invalid%20provider%20status%20request");
+  const reviewValue = String(form.get("review_at") || "");
+  const reviewAt = reviewValue ? new Date(reviewValue) : null;
+  if (reviewAt && Number.isNaN(reviewAt.getTime()))
+    redirect("/admin/providers?error=Invalid%20review%20date");
+  const { data, error } = await supabase.rpc("manage_provider_status", {
+    p_provider: provider,
+    p_action: action,
+    p_reason_category: String(form.get("reason_category") || ""),
+    p_internal_reason: String(form.get("internal_reason") || ""),
+    p_customer_message: String(form.get("customer_message") || ""),
+    p_review_at: reviewAt?.toISOString() || null,
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error)
+    redirect(`/admin/providers?error=${encodeURIComponent(error.message)}`);
+  revalidatePath("/admin/providers");
+  revalidatePath("/dispatch");
+  redirect(
+    `/admin/providers?provider_updated=1&active_jobs=${data?.active_job_count || 0}`,
+  );
+}

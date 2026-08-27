@@ -59,6 +59,16 @@ export default async function Page() {
         Manage readiness, incoming offers, and scheduled work from one protected
         workspace.
       </p>
+      {company?.status === "suspended" && (
+        <div className="mt-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950">
+          <h2 className="font-black">New work is temporarily unavailable</h2>
+          <p className="mt-2 text-sm">
+            MUBER has paused new offers and assignments for this contractor.
+            Existing work and historical records remain available. Review your
+            notifications or contact support for the operational next step.
+          </p>
+        </div>
+      )}
       <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           ["Pending offers", pendingOffers || 0],
