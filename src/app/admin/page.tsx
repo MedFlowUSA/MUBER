@@ -36,6 +36,12 @@ export default async function Page() {
           >
             Review credentials
           </Link>
+          <Link
+            href="/admin/support"
+            className="inline-flex rounded-xl border border-navy px-5 py-3 font-bold text-navy"
+          >
+            Review support requests
+          </Link>
         </div>
       )}
     </RoleShell>
