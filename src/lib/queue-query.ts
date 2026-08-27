@@ -244,10 +244,13 @@ export function parseNotificationQuery(input: {
 export function parseConversationQuery(input: {
   view?: string;
   page?: string;
+  message_page?: string;
 }) {
   return {
     view: input.view === "unread" ? "unread" : "all",
     page: boundedPage(input.page),
     pageSize: 20,
+    messagePage: boundedPage(input.message_page),
+    messagePageSize: 50,
   };
 }

@@ -25,6 +25,7 @@ type Message = {
   sender_name: string;
   sender_role: string;
   created_at: string;
+  total_count: number;
 };
 type Attachment = {
   id: string;
@@ -52,6 +53,7 @@ export default async function MessagesPage({
     sent?: string;
     view?: string;
     page?: string;
+    message_page?: string;
   }>;
 }) {
   const query = await searchParams;
@@ -81,11 +83,16 @@ export default async function MessagesPage({
     available.find((item) => item.job_id === query.job) || available[0];
   const [messageResult, attachmentResult] = selected
     ? await Promise.all([
-        supabase.rpc("get_job_messages", {
+        supabase.rpc("get_job_messages_page", {
           p_job: selected.job_id,
-          p_limit: 200,
+          p_page: filters.messagePage,
+          p_page_size: filters.messagePageSize,
         }),
-        supabase.rpc("get_job_message_attachments", { p_job: selected.job_id }),
+        supabase.rpc("get_job_message_attachments_page", {
+          p_job: selected.job_id,
+          p_page: filters.messagePage,
+          p_page_size: filters.messagePageSize,
+        }),
       ])
     : [
         { data: [], error: null },
@@ -93,6 +100,13 @@ export default async function MessagesPage({
       ];
   const { data: messages, error } = messageResult;
   const attachments = (attachmentResult.data || []) as Attachment[];
+  const messageRows = (messages || []) as Message[];
+  const messagePages = Math.max(
+    1,
+    Math.ceil(
+      Number(messageRows[0]?.total_count || 0) / filters.messagePageSize,
+    ),
+  );
   const role = String(profile.role);
   const operational = ["dispatcher", "super_admin"].includes(role);
   const channel =
@@ -175,7 +189,7 @@ export default async function MessagesPage({
               </span>
             </div>
             <div className="grid max-h-[32rem] gap-3 overflow-y-auto py-5">
-              {((messages || []) as Message[]).map((message) => (
+              {messageRows.map((message) => (
                 <article
                   key={message.id}
                   className={`max-w-[90%] rounded-2xl p-4 ${message.sender_id === user.id ? "ml-auto bg-orange/10" : "bg-warm"}`}
@@ -211,6 +225,23 @@ export default async function MessagesPage({
                   No messages yet. Start the conversation below.
                 </p>
               )}
+            </div>
+            <div className="mb-5 flex items-center justify-between border-t pt-4">
+              <Link
+                className={`text-sm font-bold ${filters.messagePage >= messagePages ? "pointer-events-none opacity-40" : ""}`}
+                href={`/messages?job=${selected.job_id}&view=${filters.view}&page=${filters.page}&message_page=${Math.min(messagePages, filters.messagePage + 1)}`}
+              >
+                Older
+              </Link>
+              <span className="text-xs font-bold">
+                Messages {filters.messagePage} / {messagePages}
+              </span>
+              <Link
+                className={`text-sm font-bold ${filters.messagePage <= 1 ? "pointer-events-none opacity-40" : ""}`}
+                href={`/messages?job=${selected.job_id}&view=${filters.view}&page=${filters.page}&message_page=${Math.max(1, filters.messagePage - 1)}`}
+              >
+                Newer
+              </Link>
             </div>
             <form action={sendJobMessage} className="grid gap-3 border-t pt-5">
               <input type="hidden" name="job" value={selected.job_id} />

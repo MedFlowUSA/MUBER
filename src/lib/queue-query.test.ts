@@ -62,9 +62,13 @@ describe("queue query validation", () => {
     });
   });
   it("bounds conversation queues", () =>
-    expect(parseConversationQuery({ view: "unread", page: "3" })).toEqual({
+    expect(
+      parseConversationQuery({ view: "unread", page: "3", message_page: "2" }),
+    ).toEqual({
       view: "unread",
       page: 3,
       pageSize: 20,
+      messagePage: 2,
+      messagePageSize: 50,
     }));
 });

@@ -298,4 +298,18 @@ describe("portal separation", () => {
     expect(migration).toContain("limit least(greatest");
     expect(migration).toContain("profile_id=auth.uid()");
   });
+  it("paginates newest conversation messages and scoped attachments", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0044_conversation_message_pagination.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("get_job_messages_page");
+    expect(migration).toContain("order by created_at desc,id desc");
+    expect(migration).toContain("get_job_message_attachments_page");
+    expect(migration).toContain("public.can_read_job_message");
+    expect(migration).toContain("limit least(greatest");
+  });
 });
