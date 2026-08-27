@@ -18,6 +18,7 @@ const routes = [
   "notifications/page.tsx",
   "portal/page.tsx",
   "admin/page.tsx",
+  "admin/audit/page.tsx",
 ];
 describe("route smoke checks", () => {
   it.each(routes)("has an App Router entry for %s", (route) =>

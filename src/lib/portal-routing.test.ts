@@ -47,4 +47,22 @@ describe("portal separation", () => {
     expect(migration).toContain("provider.profile_updated");
     expect(migration).not.toContain("p_company");
   });
+
+  it("separates finance from compliance and sanitizes the audit feed", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0028_admin_operational_overview.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("v_role='finance_admin'");
+    expect(migration).toContain("'payments_enabled',false");
+    expect(migration).toContain(
+      "returns table(id uuid,actor_name text,action text,entity_type text,entity_id uuid,occurred_at timestamptz)",
+    );
+    expect(migration).not.toContain(
+      "returns table(id uuid,actor_name text,action text,entity_type text,entity_id uuid,metadata",
+    );
+  });
 });
