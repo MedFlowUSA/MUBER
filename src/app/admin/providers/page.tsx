@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
+import {
+  APPLICATION_STATUSES,
+  parseProviderQueueQuery,
+  PROVIDER_STATUSES,
+} from "@/lib/queue-query";
 import { manageProviderStatus, reviewProviderApplication } from "./actions";
 
 type Props = {
@@ -9,6 +14,12 @@ type Props = {
     reviewed?: string;
     provider_updated?: string;
     active_jobs?: string;
+    provider_q?: string;
+    provider_status?: string;
+    provider_page?: string;
+    application_q?: string;
+    application_status?: string;
+    application_page?: string;
   }>;
 };
 
@@ -18,18 +29,70 @@ export default async function ProviderReviewsPage({ searchParams }: Props) {
     "/admin/providers",
   );
   const params = await searchParams;
-  const { data: applications } = await supabase
+  const filters = parseProviderQueueQuery(params);
+  let applicationQuery = supabase
     .from("provider_applications")
     .select(
       "id,legal_name,dba_name,contact_name,business_email,service_categories,service_territory,status,submitted_at,internal_reason",
-    )
-    .order("created_at", { ascending: false });
-  const { data: providers } = await supabase
+      { count: "exact" },
+    );
+  if (filters.applicationQ)
+    applicationQuery = applicationQuery.ilike(
+      "legal_name",
+      `${filters.applicationQ}%`,
+    );
+  if (filters.applicationStatus)
+    applicationQuery = applicationQuery.eq("status", filters.applicationStatus);
+  let providerQuery = supabase
     .from("provider_companies")
     .select(
       "id,legal_name,display_name,status,available,provider_status_events(from_status,to_status,reason_category,customer_safe_message,effective_at,review_at)",
-    )
-    .order("legal_name");
+      { count: "exact" },
+    );
+  if (filters.providerQ)
+    providerQuery = providerQuery.ilike("legal_name", `${filters.providerQ}%`);
+  if (filters.providerStatus)
+    providerQuery = providerQuery.eq("status", filters.providerStatus);
+  const providerStart = (filters.providerPage - 1) * filters.pageSize,
+    applicationStart = (filters.applicationPage - 1) * filters.pageSize;
+  const [
+    { data: applications, count: applicationCount },
+    { data: providers, count: providerCount },
+  ] = await Promise.all([
+    applicationQuery
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(applicationStart, applicationStart + filters.pageSize - 1),
+    providerQuery
+      .order("legal_name")
+      .order("id")
+      .range(providerStart, providerStart + filters.pageSize - 1),
+  ]);
+  const href = (kind: "provider" | "application", page: number) => {
+    const p = new URLSearchParams();
+    if (filters.providerQ) p.set("provider_q", filters.providerQ);
+    if (filters.providerStatus)
+      p.set("provider_status", filters.providerStatus);
+    if (filters.applicationQ) p.set("application_q", filters.applicationQ);
+    if (filters.applicationStatus)
+      p.set("application_status", filters.applicationStatus);
+    p.set(`${kind}_page`, String(page));
+    p.set(
+      `${kind === "provider" ? "application" : "provider"}_page`,
+      String(
+        kind === "provider" ? filters.applicationPage : filters.providerPage,
+      ),
+    );
+    return `/admin/providers?${p}`;
+  };
+  const providerPages = Math.max(
+      1,
+      Math.ceil((providerCount || 0) / filters.pageSize),
+    ),
+    applicationPages = Math.max(
+      1,
+      Math.ceil((applicationCount || 0) / filters.pageSize),
+    );
 
   return (
     <RoleShell role="admin">
@@ -65,6 +128,26 @@ export default async function ProviderReviewsPage({ searchParams }: Props) {
           jobs, evidence, credentials, or history. Active jobs remain visible
           and are flagged for dispatch review.
         </p>
+        <form className="mt-5 grid gap-3 rounded-2xl border bg-white p-4 md:grid-cols-[1fr_1fr_auto]">
+          <input
+            name="provider_q"
+            defaultValue={filters.providerQ}
+            maxLength={80}
+            placeholder="Legal-name prefix"
+            className="rounded-xl border p-3"
+          />
+          <select
+            name="provider_status"
+            defaultValue={filters.providerStatus}
+            className="rounded-xl border p-3"
+          >
+            <option value="">All statuses</option>
+            {PROVIDER_STATUSES.map((status) => (
+              <option key={status}>{status}</option>
+            ))}
+          </select>
+          <button className="btn-primary">Filter contractors</button>
+        </form>
         <div className="mt-5 grid gap-5">
           {(providers || []).map((provider) => (
             <article
@@ -182,7 +265,48 @@ export default async function ProviderReviewsPage({ searchParams }: Props) {
             </p>
           )}
         </div>
+        <div className="mt-4 flex items-center justify-between">
+          <Link
+            href={href("provider", Math.max(1, filters.providerPage - 1))}
+            className={`btn-ghost ${filters.providerPage <= 1 ? "pointer-events-none opacity-50" : ""}`}
+          >
+            Previous
+          </Link>
+          <span className="text-sm font-bold">
+            Page {filters.providerPage} of {providerPages} ·{" "}
+            {providerCount || 0}
+          </span>
+          <Link
+            href={href(
+              "provider",
+              Math.min(providerPages, filters.providerPage + 1),
+            )}
+            className={`btn-ghost ${filters.providerPage >= providerPages ? "pointer-events-none opacity-50" : ""}`}
+          >
+            Next
+          </Link>
+        </div>
       </section>
+      <form className="mt-8 grid gap-3 rounded-2xl border bg-white p-4 md:grid-cols-[1fr_1fr_auto]">
+        <input
+          name="application_q"
+          defaultValue={filters.applicationQ}
+          maxLength={80}
+          placeholder="Applicant legal-name prefix"
+          className="rounded-xl border p-3"
+        />
+        <select
+          name="application_status"
+          defaultValue={filters.applicationStatus}
+          className="rounded-xl border p-3"
+        >
+          <option value="">All statuses</option>
+          {APPLICATION_STATUSES.map((status) => (
+            <option key={status}>{status.replaceAll("_", " ")}</option>
+          ))}
+        </select>
+        <button className="btn-primary">Filter applications</button>
+      </form>
       <div className="mt-8 grid gap-5">
         {(applications || []).map((application) => (
           <article
@@ -272,6 +396,27 @@ export default async function ProviderReviewsPage({ searchParams }: Props) {
             No provider applications are waiting for review.
           </p>
         )}
+      </div>
+      <div className="mt-4 flex items-center justify-between">
+        <Link
+          href={href("application", Math.max(1, filters.applicationPage - 1))}
+          className={`btn-ghost ${filters.applicationPage <= 1 ? "pointer-events-none opacity-50" : ""}`}
+        >
+          Previous
+        </Link>
+        <span className="text-sm font-bold">
+          Page {filters.applicationPage} of {applicationPages} ·{" "}
+          {applicationCount || 0}
+        </span>
+        <Link
+          href={href(
+            "application",
+            Math.min(applicationPages, filters.applicationPage + 1),
+          )}
+          className={`btn-ghost ${filters.applicationPage >= applicationPages ? "pointer-events-none opacity-50" : ""}`}
+        >
+          Next
+        </Link>
       </div>
     </RoleShell>
   );

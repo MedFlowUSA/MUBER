@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseQueueQuery } from "./queue-query";
+import {
+  parseIncidentQueueQuery,
+  parseProviderQueueQuery,
+  parseQueueQuery,
+} from "./queue-query";
 describe("queue query validation", () => {
   it("normalizes bounded reference searches and pages", () =>
     expect(parseQueueQuery({ q: " mub-2608- ", page: "2" })).toMatchObject({
@@ -15,4 +19,20 @@ describe("queue query validation", () => {
     expect(parseQueueQuery({ status: "incident_hold" }).status).toBe(
       "incident_hold",
     ));
+  it("bounds provider administration filters", () =>
+    expect(
+      parseProviderQueueQuery({
+        provider_q: " Acme & Sons ",
+        provider_status: "suspended",
+        provider_page: "3",
+      }),
+    ).toMatchObject({
+      providerQ: "Acme & Sons",
+      providerStatus: "suspended",
+      providerPage: 3,
+    }));
+  it("requires exact incident identifiers", () =>
+    expect(
+      parseIncidentQueueQuery({ incident: "not-an-id", status: "invented" }),
+    ).toMatchObject({ incident: "", status: "", page: 1 }));
 });

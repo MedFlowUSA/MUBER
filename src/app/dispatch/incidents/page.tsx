@@ -3,24 +3,61 @@ import Link from "next/link";
 import { RoleShell } from "@/components/role-shell";
 import { IncidentEvidenceUpload } from "@/components/incident-evidence-upload";
 import { requireOperationalRole } from "@/lib/authorization";
+import {
+  INCIDENT_CATEGORIES,
+  INCIDENT_STATUSES,
+  parseIncidentQueueQuery,
+} from "@/lib/queue-query";
 import { closeJob, reviewIncident } from "./actions";
 
 export default async function IncidentQueue({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; updated?: string; closed?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    updated?: string;
+    closed?: string;
+    incident?: string;
+    status?: string;
+    category?: string;
+    page?: string;
+  }>;
 }) {
   const { supabase, profile } = await requireOperationalRole(
     ["dispatcher", "compliance_admin", "super_admin"],
     "/dispatch/incidents",
   );
   const query = await searchParams;
-  const { data: incidents } = await supabase
+  const filters = parseIncidentQueueQuery(query);
+  let incidentQuery = supabase
     .from("incidents")
     .select(
       "id,job_id,category,reported_severity,status,reported_at,description,injury_indicator,emergency_services_indicator,damage_indicator,missing_item_indicator,hazard_indicator,jobs(reference,status),incident_evidence(id,evidence_type,description,created_at)",
-    )
-    .order("reported_at", { ascending: false });
+      { count: "exact" },
+    );
+  if (filters.incident)
+    incidentQuery = incidentQuery.eq("id", filters.incident);
+  if (filters.status)
+    incidentQuery = incidentQuery.eq("status", filters.status);
+  if (filters.category)
+    incidentQuery = incidentQuery.eq("category", filters.category);
+  const start = (filters.page - 1) * filters.pageSize;
+  const { data: incidents, count: incidentCount } = await incidentQuery
+    .order("reported_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(start, start + filters.pageSize - 1);
+  const totalPages = Math.max(
+    1,
+    Math.ceil((incidentCount || 0) / filters.pageSize),
+  );
+  const pageHref = (page: number) => {
+    const p = new URLSearchParams();
+    if (filters.incident) p.set("incident", filters.incident);
+    if (filters.status) p.set("status", filters.status);
+    if (filters.category) p.set("category", filters.category);
+    p.set("page", String(page));
+    return `/dispatch/incidents?${p}`;
+  };
   const { data: completed } =
     profile.role === "compliance_admin"
       ? { data: [] }
@@ -50,6 +87,36 @@ export default async function IncidentQueue({
           The audited operation was recorded.
         </p>
       )}
+      <form className="mt-6 grid gap-3 rounded-2xl border bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
+        <input
+          name="incident"
+          defaultValue={filters.incident}
+          maxLength={36}
+          placeholder="Exact incident ID"
+          className="rounded-xl border p-3"
+        />
+        <select
+          name="status"
+          defaultValue={filters.status}
+          className="rounded-xl border p-3"
+        >
+          <option value="">All statuses</option>
+          {INCIDENT_STATUSES.map((status) => (
+            <option key={status}>{status.replaceAll("_", " ")}</option>
+          ))}
+        </select>
+        <select
+          name="category"
+          defaultValue={filters.category}
+          className="rounded-xl border p-3"
+        >
+          <option value="">All categories</option>
+          {INCIDENT_CATEGORIES.map((category) => (
+            <option key={category}>{category.replaceAll("_", " ")}</option>
+          ))}
+        </select>
+        <button className="btn-primary">Apply filters</button>
+      </form>
       <section className="mt-8 grid gap-4">
         <h2 className="text-2xl font-black">Incident queue</h2>
         {(incidents || []).map((item: any) => (
@@ -151,6 +218,23 @@ export default async function IncidentQueue({
             No incident reports.
           </p>
         )}
+        <div className="mt-2 flex items-center justify-between">
+          <Link
+            href={pageHref(Math.max(1, filters.page - 1))}
+            className={`btn-ghost ${filters.page <= 1 ? "pointer-events-none opacity-50" : ""}`}
+          >
+            Previous
+          </Link>
+          <span className="text-sm font-bold">
+            Page {filters.page} of {totalPages} · {incidentCount || 0}
+          </span>
+          <Link
+            href={pageHref(Math.min(totalPages, filters.page + 1))}
+            className={`btn-ghost ${filters.page >= totalPages ? "pointer-events-none opacity-50" : ""}`}
+          >
+            Next
+          </Link>
+        </div>
       </section>
       <section className="mt-10">
         <h2 className="text-2xl font-black">Closure candidates</h2>

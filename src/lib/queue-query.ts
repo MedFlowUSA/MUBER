@@ -36,3 +36,110 @@ export function parseQueueQuery(input: {
     Number.isInteger(rawPage) && rawPage > 0 && rawPage <= 10000 ? rawPage : 1;
   return { q: /^[A-Z0-9-]*$/.test(q) ? q : "", status, page, pageSize: 20 };
 }
+
+export const PROVIDER_STATUSES = [
+  "approved",
+  "suspended",
+  "pending",
+  "reviewing",
+] as const;
+export const APPLICATION_STATUSES = [
+  "draft",
+  "submitted",
+  "under_review",
+  "information_requested",
+  "approved",
+  "rejected",
+  "withdrawn",
+  "suspended",
+] as const;
+export const INCIDENT_STATUSES = [
+  "reported",
+  "triage",
+  "awaiting_customer_information",
+  "awaiting_provider_information",
+  "awaiting_crew_information",
+  "under_investigation",
+  "resolution_proposed",
+  "resolved",
+  "closed",
+  "reopened",
+  "void",
+] as const;
+export const INCIDENT_CATEGORIES = [
+  "customer_injury",
+  "crew_injury",
+  "third_party_injury",
+  "property_damage",
+  "item_damage",
+  "missing_item",
+  "unsafe_location",
+  "threatening_behavior",
+  "vehicle_incident",
+  "access_problem",
+  "prohibited_hazardous_material",
+  "illegal_disposal_concern",
+  "provider_conduct",
+  "customer_conduct",
+  "service_abandonment",
+  "other",
+] as const;
+const boundedPage = (value?: string) => {
+  const page = Number(value || 1);
+  return Number.isInteger(page) && page > 0 && page <= 10000 ? page : 1;
+};
+const safeName = (value?: string) => {
+  const q = String(value || "")
+    .trim()
+    .slice(0, 80);
+  return /^[\p{L}\p{N} .&'-]*$/u.test(q) ? q : "";
+};
+export function parseProviderQueueQuery(input: {
+  provider_q?: string;
+  provider_status?: string;
+  provider_page?: string;
+  application_q?: string;
+  application_status?: string;
+  application_page?: string;
+}) {
+  return {
+    providerQ: safeName(input.provider_q),
+    providerStatus: PROVIDER_STATUSES.includes(
+      input.provider_status as (typeof PROVIDER_STATUSES)[number],
+    )
+      ? input.provider_status!
+      : "",
+    providerPage: boundedPage(input.provider_page),
+    applicationQ: safeName(input.application_q),
+    applicationStatus: APPLICATION_STATUSES.includes(
+      input.application_status as (typeof APPLICATION_STATUSES)[number],
+    )
+      ? input.application_status!
+      : "",
+    applicationPage: boundedPage(input.application_page),
+    pageSize: 15,
+  };
+}
+export function parseIncidentQueueQuery(input: {
+  incident?: string;
+  status?: string;
+  category?: string;
+  page?: string;
+}) {
+  const incident = String(input.incident || "").trim();
+  return {
+    incident: /^[0-9a-f-]{36}$/i.test(incident) ? incident : "",
+    status: INCIDENT_STATUSES.includes(
+      input.status as (typeof INCIDENT_STATUSES)[number],
+    )
+      ? input.status!
+      : "",
+    category: INCIDENT_CATEGORIES.includes(
+      input.category as (typeof INCIDENT_CATEGORIES)[number],
+    )
+      ? input.category!
+      : "",
+    page: boundedPage(input.page),
+    pageSize: 20,
+  };
+}
