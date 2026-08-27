@@ -17,7 +17,7 @@ export default function TermsPage() {
         </p>
         <p>
           MUBER is operated by MUBER Enterprises LLC, located in Redlands,
-          California 92313.
+          California 92373.
         </p>
       </LegalSection>
       <LegalSection id="role" title="2. MUBER’s role">

@@ -12,7 +12,7 @@ export default function PrivacyPage() {
           This policy applies to the MUBER website, customer accounts, provider
           applications and portals, dispatcher workflows, and support
           interactions. “MUBER,” “we,” and “us” refer to MUBER Enterprises LLC,
-          located in Redlands, California 92313. It does not govern an
+          located in Redlands, California 92373. It does not govern an
           independent provider’s separate practices outside MUBER.
         </p>
       </LegalSection>
