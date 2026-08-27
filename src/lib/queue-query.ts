@@ -247,7 +247,9 @@ export function parseConversationQuery(input: {
   message_page?: string;
 }) {
   return {
-    view: input.view === "unread" ? "unread" : "all",
+    view: ["unread", "needs_reply"].includes(input.view || "")
+      ? input.view!
+      : "all",
     page: boundedPage(input.page),
     pageSize: 20,
     messagePage: boundedPage(input.message_page),

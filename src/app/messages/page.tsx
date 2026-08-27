@@ -16,6 +16,8 @@ type MessageJob = {
   last_preview: string | null;
   unread_count: number;
   total_count: number;
+  needs_reply: boolean;
+  waiting_hours: number;
 };
 type Message = {
   id: string;
@@ -69,10 +71,10 @@ export default async function MessagesPage({
     .eq("id", user.id)
     .single();
   if (!profile) redirect("/auth/login");
-  const { data: jobs } = await supabase.rpc("get_message_jobs_page", {
+  const { data: jobs } = await supabase.rpc("get_message_response_queue", {
     p_page: filters.page,
     p_page_size: filters.pageSize,
-    p_unread_only: filters.view === "unread",
+    p_view: filters.view,
   });
   const available = (jobs || []) as MessageJob[];
   const pages = Math.max(
@@ -131,6 +133,7 @@ export default async function MessagesPage({
         >
           <option value="all">All conversations</option>
           <option value="unread">Unread only</option>
+          <option value="needs_reply">Needs my reply</option>
         </select>
         <button className="btn-primary">Apply</button>
       </form>
@@ -159,6 +162,11 @@ export default async function MessagesPage({
               {Number(item.unread_count) > 0 && (
                 <span className="ml-2 rounded-full bg-orange px-2 py-1 text-xs font-black text-white">
                   {item.unread_count} unread
+                </span>
+              )}
+              {item.needs_reply && (
+                <span className="mt-2 block text-xs font-black text-orange">
+                  Reply needed · waiting {item.waiting_hours}h
                 </span>
               )}
               <span className="mt-1 block text-xs uppercase">

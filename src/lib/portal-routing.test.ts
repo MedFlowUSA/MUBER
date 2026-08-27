@@ -312,4 +312,18 @@ describe("portal separation", () => {
     expect(migration).toContain("public.can_read_job_message");
     expect(migration).toContain("limit least(greatest");
   });
+  it("derives role-aware conversation response queues", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0045_conversation_response_queue.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("get_message_response_queue");
+    expect(migration).toContain("needs_reply");
+    expect(migration).toContain("lm.sender_role");
+    expect(migration).toContain("public.can_read_job_message");
+    expect(migration).toContain("p_view='needs_reply'");
+  });
 });

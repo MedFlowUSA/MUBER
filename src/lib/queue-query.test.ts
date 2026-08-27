@@ -71,4 +71,8 @@ describe("queue query validation", () => {
       messagePage: 2,
       messagePageSize: 50,
     }));
+  it("accepts the conversation response queue", () =>
+    expect(parseConversationQuery({ view: "needs_reply" }).view).toBe(
+      "needs_reply",
+    ));
 });
