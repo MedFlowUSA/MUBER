@@ -326,4 +326,17 @@ describe("portal separation", () => {
     expect(migration).toContain("public.can_read_job_message");
     expect(migration).toContain("p_view='needs_reply'");
   });
+  it("summarizes authorized conversation workload for dashboards", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0046_conversation_workload_counts.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("conversation_workload_counts");
+    expect(migration).toContain("public.can_read_job_message");
+    expect(migration).toContain("overdue_reply_threads");
+    expect(migration).toContain("interval '4 hours'");
+  });
 });

@@ -6,18 +6,22 @@ import { EmptyState } from "@/components/empty-state";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { logout } from "@/app/auth/actions";
 import { statusForCustomer } from "@/lib/job-status";
+import { ConversationWorkload } from "@/components/conversation-workload";
 export default async function Page() {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login?next=/customer");
-  const { data, error } = await supabase
-    .from("jobs")
-    .select(
-      "id,reference,service,status,preferred_start,time_window,created_at,job_stops(stop_type,addresses(city,region))",
-    )
-    .order("created_at", { ascending: false });
+  const [{ data, error }, { data: conversationCounts }] = await Promise.all([
+    supabase
+      .from("jobs")
+      .select(
+        "id,reference,service,status,preferred_start,time_window,created_at,job_stops(stop_type,addresses(city,region))",
+      )
+      .order("created_at", { ascending: false }),
+    supabase.rpc("conversation_workload_counts"),
+  ]);
   return (
     <RoleShell role="customer">
       <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
@@ -40,6 +44,7 @@ export default async function Page() {
           </form>
         </div>
       </div>
+      <ConversationWorkload counts={conversationCounts} />
       {error ? (
         <div role="alert" className="card mt-8 text-red-700">
           <h2 className="font-black">Requests could not be loaded</h2>

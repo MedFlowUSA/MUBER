@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireOperationalRole } from "@/lib/authorization";
 import { crewFieldActions } from "@/lib/job-status";
 import { advanceFieldWork, confirmCrewAssignment } from "./actions";
+import { ConversationWorkload } from "@/components/conversation-workload";
 type Stop = {
   stop_order: number;
   stop_type: string;
@@ -44,12 +45,16 @@ export default async function CrewPage({
     "/crew",
   );
   const query = await searchParams;
-  const { data: assignments } = await supabase
-    .from("assignments")
-    .select(
-      "id,status,scheduled_start,scheduled_end,jobs(service,description,customers(full_name,phone),job_stops(stop_order,stop_type,addresses(line1,line2,city,region,postal_code,access_notes))),crews(name,crew_size),vehicles(label,vehicle_type)",
-    )
-    .order("scheduled_start", { ascending: true });
+  const [{ data: assignments }, { data: conversationCounts }] =
+    await Promise.all([
+      supabase
+        .from("assignments")
+        .select(
+          "id,status,scheduled_start,scheduled_end,jobs(service,description,customers(full_name,phone),job_stops(stop_order,stop_type,addresses(line1,line2,city,region,postal_code,access_notes))),crews(name,crew_size),vehicles(label,vehicle_type)",
+        )
+        .order("scheduled_start", { ascending: true }),
+      supabase.rpc("conversation_workload_counts"),
+    ]);
   return (
     <RoleShell role="crew">
       <p className="eyebrow">Crew workspace</p>
@@ -58,6 +63,7 @@ export default async function CrewPage({
         Only work assigned to your crew appears here. Customer details are
         released only after a valid assignment.
       </p>
+      <ConversationWorkload counts={conversationCounts} />
       {query.error && (
         <p className="mt-5 rounded-xl bg-red-50 p-4 text-red-800">
           {query.error}

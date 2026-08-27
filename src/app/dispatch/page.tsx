@@ -2,6 +2,7 @@ import Link from "next/link";
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
 import { DISPATCH_STATUSES, parseQueueQuery } from "@/lib/queue-query";
+import { ConversationWorkload } from "@/components/conversation-workload";
 
 const queueGroups = [
   { label: "New", statuses: ["submitted"] },
@@ -46,14 +47,18 @@ export default async function DispatchPage({
   if (query.status) jobsQuery = jobsQuery.eq("status", query.status);
   if (query.q) jobsQuery = jobsQuery.ilike("reference", `${query.q}%`);
   const start = (query.page - 1) * query.pageSize;
-  const [{ data: jobs, error, count }, { data: queueCounts }] =
-    await Promise.all([
-      jobsQuery
-        .order("created_at", { ascending: false })
-        .order("id", { ascending: false })
-        .range(start, start + query.pageSize - 1),
-      supabase.rpc("dispatch_queue_counts"),
-    ]);
+  const [
+    { data: jobs, error, count },
+    { data: queueCounts },
+    { data: conversationCounts },
+  ] = await Promise.all([
+    jobsQuery
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(start, start + query.pageSize - 1),
+    supabase.rpc("dispatch_queue_counts"),
+    supabase.rpc("conversation_workload_counts"),
+  ]);
   const totalPages = Math.max(1, Math.ceil((count || 0) / query.pageSize));
   const pageHref = (page: number) => {
     const params = new URLSearchParams();
@@ -85,6 +90,7 @@ export default async function DispatchPage({
           </Link>
         </div>
       </div>
+      <ConversationWorkload counts={conversationCounts} />
       {error && (
         <p className="mt-6 rounded-xl bg-red-50 p-4 text-red-800">
           The dispatch queue could not be loaded.

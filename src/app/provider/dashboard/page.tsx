@@ -1,6 +1,7 @@
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
 import Link from "next/link";
+import { ConversationWorkload } from "@/components/conversation-workload";
 export default async function Page() {
   const { supabase } = await requireOperationalRole(
     ["provider_owner", "provider_manager", "super_admin"],
@@ -16,6 +17,7 @@ export default async function Page() {
     { count: vehicles },
     { count: crews },
     { count: upcomingJobs },
+    { data: conversationCounts },
   ] = await Promise.all([
     supabase
       .from("provider_companies")
@@ -39,6 +41,7 @@ export default async function Page() {
       .from("assignments")
       .select("id", { count: "exact", head: true })
       .in("status", ["accepted", "crew_assigned", "crew_confirmed", "ready"]),
+    supabase.rpc("conversation_workload_counts"),
   ]);
   const readiness = [
     { label: "Company approved", ready: company?.status === "approved" },
@@ -59,6 +62,7 @@ export default async function Page() {
         Manage readiness, incoming offers, and scheduled work from one protected
         workspace.
       </p>
+      <ConversationWorkload counts={conversationCounts} />
       {company?.status === "suspended" && (
         <div className="mt-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950">
           <h2 className="font-black">New work is temporarily unavailable</h2>
