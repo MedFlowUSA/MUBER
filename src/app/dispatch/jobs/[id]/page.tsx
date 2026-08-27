@@ -25,6 +25,20 @@ type Props = {
 };
 const first = <T,>(value: T | T[] | null) =>
   Array.isArray(value) ? value[0] : value;
+type EligibilityRow = {
+  provider_company_id: string;
+  legal_name: string;
+  eligible: boolean;
+  reasons: string[];
+  vehicle_fit: boolean;
+  crew_fit: boolean;
+  credential_fit: boolean;
+};
+type ScheduleRow = {
+  provider_company_id: string;
+  schedule_eligible: boolean;
+  schedule_reason: string | null;
+};
 export default async function DispatchJob({ params, searchParams }: Props) {
   const { id } = await params,
     query = await searchParams;
@@ -53,10 +67,32 @@ export default async function DispatchJob({ params, searchParams }: Props) {
   const review = job.internal_job_reviews?.[0],
     commands = dispatchCommands[job.status] || [];
   const customer = first(job.customers);
-  const { data: eligibility } =
+  const [{ data: baseEligibility }, { data: scheduleEligibility }] =
     job.status === "ready_for_matching"
-      ? await supabase.rpc("eligible_providers_for_job", { p_job: job.id })
-      : { data: null };
+      ? await Promise.all([
+          supabase.rpc("eligible_providers_for_job", { p_job: job.id }),
+          supabase.rpc("provider_schedule_eligibility_for_job", {
+            p_job: job.id,
+          }),
+        ])
+      : [{ data: null }, { data: null }];
+  const eligibility = ((baseEligibility || []) as EligibilityRow[]).map(
+    (provider) => {
+      const schedule = (scheduleEligibility as ScheduleRow[] | null)?.find(
+        (item: ScheduleRow) =>
+          item.provider_company_id === provider.provider_company_id,
+      );
+      return {
+        ...provider,
+        eligible: provider.eligible && (schedule?.schedule_eligible ?? true),
+        reasons:
+          schedule?.schedule_eligible === false && schedule.schedule_reason
+            ? [...provider.reasons, schedule.schedule_reason]
+            : provider.reasons,
+        schedule_fit: schedule?.schedule_eligible ?? true,
+      };
+    },
+  );
   return (
     <RoleShell role="dispatch">
       <Link href="/dispatch" className="text-sm font-bold text-orange-600">
@@ -297,6 +333,7 @@ export default async function DispatchJob({ params, searchParams }: Props) {
                 vehicle_fit: boolean;
                 crew_fit: boolean;
                 credential_fit: boolean;
+                schedule_fit: boolean;
               }) => (
                 <article
                   key={provider.provider_company_id}
@@ -314,6 +351,8 @@ export default async function DispatchJob({ params, searchParams }: Props) {
                     Vehicle: {provider.vehicle_fit ? "fit" : "blocked"} · Crew:{" "}
                     {provider.crew_fit ? "fit" : "blocked"} · Credentials:{" "}
                     {provider.credential_fit ? "verified" : "blocked"}
+                    {" · "}Schedule:{" "}
+                    {provider.schedule_fit ? "open" : "blocked"}
                   </p>
                   {provider.reasons.length > 0 && (
                     <ul className="mt-3 list-disc pl-5 text-sm text-red-700">
@@ -362,7 +401,7 @@ export default async function DispatchJob({ params, searchParams }: Props) {
                 </article>
               ),
             )}
-            {!eligibility?.length && (
+            {!eligibility.length && (
               <p className="text-sm text-slate">
                 No approved providers are configured yet.
               </p>

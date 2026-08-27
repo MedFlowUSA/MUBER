@@ -65,4 +65,19 @@ describe("portal separation", () => {
       "returns table(id uuid,actor_name text,action text,entity_type text,entity_id uuid,metadata",
     );
   });
+
+  it("derives contractor availability ownership and enforces conflicts", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0029_contractor_availability_calendar.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("om.profile_id=auth.uid()");
+    expect(migration).toContain("provider_schedule_eligible");
+    expect(migration).toContain("enforce_provider_schedule_before_offer");
+    expect(migration).toContain("provider.availability_set");
+    expect(migration).not.toContain("p_provider uuid,p_date");
+  });
 });

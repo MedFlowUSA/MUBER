@@ -39,6 +39,11 @@ export const portalMenus = {
     },
     { label: "Job offers", href: "/provider/offers", icon: ClipboardList },
     { label: "Scheduled jobs", href: "/provider/jobs", icon: LayoutDashboard },
+    {
+      label: "Availability",
+      href: "/provider/availability",
+      icon: ClipboardList,
+    },
     { label: "Vehicles & crews", href: "/provider/fleet", icon: Truck },
     { label: "Credentials", href: "/provider/credentials", icon: BadgeCheck },
     { label: "Notifications", href: "/notifications", icon: Bell },

@@ -8,6 +8,7 @@ const routes = [
   "customer/page.tsx",
   "provider/page.tsx",
   "provider/profile/page.tsx",
+  "provider/availability/page.tsx",
   "crew/page.tsx",
   "crew/invite/[id]/page.tsx",
   "crew/completion/[assignment]/page.tsx",
