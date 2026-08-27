@@ -13,7 +13,11 @@ export const publicNav = [
 ] as const;
 export const roleRoutes = {
   customer: { label: "Customer", href: "/customer", icon: House },
-  provider: { label: "Provider", href: "/provider", icon: BriefcaseBusiness },
+  provider: {
+    label: "Provider",
+    href: "/provider/dashboard",
+    icon: BriefcaseBusiness,
+  },
   crew: { label: "Crew", href: "/crew", icon: Truck },
   dispatch: { label: "Dispatch", href: "/dispatch", icon: LayoutDashboard },
   admin: { label: "Admin", href: "/admin", icon: LifeBuoy },

@@ -32,9 +32,9 @@ export default function Page() {
                 MUBER is preparing a managed marketplace for qualified moving
                 and junk-removal companies across the Inland Empire.
               </p>
-              <a href="#apply" className="btn-primary mt-8">
+              <Link href="/provider/apply" className="btn-primary mt-8">
                 Become a provider <ArrowRight size={18} />
-              </a>
+              </Link>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {benefits.map(([Icon, x]) => (

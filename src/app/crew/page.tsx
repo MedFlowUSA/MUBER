@@ -1,13 +1,18 @@
 import { EmptyState } from "@/components/empty-state";
 import { RoleShell } from "@/components/role-shell";
-export default function Page() {
+import { requireOperationalRole } from "@/lib/authorization";
+export default async function Page() {
+  await requireOperationalRole(
+    ["crew_lead", "crew_member", "super_admin"],
+    "/crew",
+  );
   return (
     <RoleShell role="crew">
       <p className="eyebrow">Crew workspace</p>
-      <h1 className="mt-2 mb-8 text-4xl font-black">Today’s field work</h1>
+      <h1 className="mt-2 mb-8 text-4xl font-black">Assigned field work</h1>
       <EmptyState
-        title="No crew assignments yet"
-        copy="Assigned stops, scope notes, photos, status controls, and completion records will appear here after provider onboarding and secure dispatch are connected."
+        title="No crew assignments"
+        copy="Only jobs assigned to your crew will appear here. Customer details remain hidden until a valid assignment exists."
       />
     </RoleShell>
   );
