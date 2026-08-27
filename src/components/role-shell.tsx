@@ -19,12 +19,13 @@ export function RoleShell({
             <span className="hidden rounded-full bg-orange/10 px-3 py-2 text-xs font-black text-orange sm:block">
               PHASE 1 PREVIEW
             </span>
-            <button
+            <Link
+              href="/notifications"
               aria-label="Notifications"
               className="grid size-11 place-items-center rounded-full border border-navy/10"
             >
               <Bell size={19} />
-            </button>
+            </Link>
           </div>
         </div>
       </header>

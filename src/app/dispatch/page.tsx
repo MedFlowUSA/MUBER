@@ -48,6 +48,9 @@ export default async function DispatchPage() {
           </p>
         </div>
         <div className="flex gap-3">
+          <Link href="/dispatch/incidents" className="btn-ghost">
+            Incidents and closure
+          </Link>
           <Link href="/dispatch/completions" className="btn-primary">
             Review completions
           </Link>

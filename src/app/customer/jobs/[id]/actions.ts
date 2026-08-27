@@ -40,3 +40,35 @@ export async function respondToCompletion(form: FormData) {
   revalidatePath(`/customer/jobs/${job}`);
   redirect(`/customer/jobs/${job}?completion_response=1`);
 }
+
+export async function reportIncident(form: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const job = String(form.get("job") || "");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect(`/auth/login?next=/customer/jobs/${job}`);
+  const { error } = await supabase.rpc("create_incident", {
+    p_job: job,
+    p_category: String(form.get("category") || "other"),
+    p_severity: String(form.get("severity") || "moderate"),
+    p_occurred_at: String(form.get("occurred_at") || new Date().toISOString()),
+    p_description: String(form.get("description") || ""),
+    p_safety_action: String(form.get("safety_action") || ""),
+    p_flags: {
+      injury: form.get("injury") === "on",
+      emergency_services: form.get("emergency_services") === "on",
+      damage: form.get("damage") === "on",
+      missing_item: form.get("missing_item") === "on",
+      hazard: form.get("hazard") === "on",
+    },
+    p_customer_summary: "A concern was reported and is awaiting MUBER review.",
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error)
+    redirect(
+      `/customer/jobs/${job}?error=${encodeURIComponent(error.message)}`,
+    );
+  revalidatePath(`/customer/jobs/${job}`);
+  redirect(`/customer/jobs/${job}?incident_reported=1`);
+}

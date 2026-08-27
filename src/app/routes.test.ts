@@ -13,6 +13,8 @@ const routes = [
   "crew/completion/[assignment]/evidence/page.tsx",
   "dispatch/page.tsx",
   "dispatch/completions/page.tsx",
+  "dispatch/incidents/page.tsx",
+  "notifications/page.tsx",
   "admin/page.tsx",
 ];
 describe("route smoke checks", () => {

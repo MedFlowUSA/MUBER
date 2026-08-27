@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { RoleShell } from "@/components/role-shell";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { statusForCustomer } from "@/lib/job-status";
-import { acceptQuote, respondToCompletion } from "./actions";
+import { acceptQuote, reportIncident, respondToCompletion } from "./actions";
 type CustomerQuote = {
   id: string;
   version: number;
@@ -26,6 +26,7 @@ export default async function Page({
     error?: string;
     accepted?: string;
     completion_response?: string;
+    incident_reported?: string;
   }>;
 }) {
   const { id } = await params;
@@ -92,6 +93,12 @@ export default async function Page({
         <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
           Your completion response was recorded. No payment or payout was
           triggered.
+        </p>
+      )}
+      {query.incident_reported && (
+        <p className="mt-5 rounded-xl bg-amber-50 p-4 text-amber-900">
+          Your report was recorded for MUBER review. If anyone is in immediate
+          danger, call 911.
         </p>
       )}
       {completion && (
@@ -223,6 +230,70 @@ export default async function Page({
           ))}
         </section>
       )}
+      <section className="card mt-8">
+        <p className="eyebrow">Safety and service support</p>
+        <h2 className="mt-2 text-2xl font-black">
+          Report an incident or concern
+        </h2>
+        <p className="mt-3 text-sm text-slate">
+          This creates an immutable report for review. It does not determine
+          fault, liability, a refund, or an insurance outcome.
+        </p>
+        <form
+          action={reportIncident}
+          className="mt-5 grid gap-3 md:grid-cols-2"
+        >
+          <input type="hidden" name="job" value={job.id} />
+          <select name="category" required className="rounded-xl border p-3">
+            <option value="item_damage">Item damage</option>
+            <option value="property_damage">Property damage</option>
+            <option value="missing_item">Missing item</option>
+            <option value="customer_injury">Injury</option>
+            <option value="provider_conduct">Provider conduct</option>
+            <option value="unsafe_location">Unsafe condition</option>
+            <option value="other">Other concern</option>
+          </select>
+          <select name="severity" required className="rounded-xl border p-3">
+            <option value="low">Low</option>
+            <option value="moderate">Moderate</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+          <input
+            name="occurred_at"
+            type="datetime-local"
+            required
+            className="rounded-xl border p-3"
+          />
+          <input
+            name="safety_action"
+            placeholder="Immediate safety action taken (optional)"
+            className="rounded-xl border p-3"
+          />
+          <textarea
+            name="description"
+            required
+            minLength={20}
+            maxLength={10000}
+            placeholder="Describe what happened and what was affected"
+            className="min-h-28 rounded-xl border p-3 md:col-span-2"
+          />
+          <fieldset className="flex flex-wrap gap-4 text-sm md:col-span-2">
+            {[
+              ["injury", "Injury"],
+              ["emergency_services", "Emergency services"],
+              ["damage", "Damage"],
+              ["missing_item", "Missing item"],
+              ["hazard", "Hazard"],
+            ].map(([name, label]) => (
+              <label key={name} className="flex gap-2">
+                <input type="checkbox" name={name} /> {label}
+              </label>
+            ))}
+          </fieldset>
+          <button className="btn-primary md:col-span-2">Submit report</button>
+        </form>
+      </section>
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
         <section className="card">
           <h2 className="text-xl font-black">Submitted scope</h2>
