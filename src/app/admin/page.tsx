@@ -1,6 +1,7 @@
 import { EmptyState } from "@/components/empty-state";
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
+import Link from "next/link";
 export default async function Page() {
   const { profile } = await requireOperationalRole(
     ["compliance_admin", "finance_admin", "super_admin"],
@@ -20,6 +21,15 @@ export default async function Page() {
         title="No actions require review"
         copy="This role sees only its permitted administrative domain. Role assignment and sensitive decisions require server-side authorization and audit logging."
       />
+      {(profile.role === "compliance_admin" ||
+        profile.role === "super_admin") && (
+        <Link
+          href="/admin/providers"
+          className="mt-6 inline-flex rounded-xl bg-orange-600 px-5 py-3 font-bold text-white"
+        >
+          Review provider applications
+        </Link>
+      )}
     </RoleShell>
   );
 }
