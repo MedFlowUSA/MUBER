@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { RoleShell } from "@/components/role-shell";
+import { IncidentEvidenceUpload } from "@/components/incident-evidence-upload";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { statusForCustomer } from "@/lib/job-status";
 import { acceptQuote, reportIncident, respondToCompletion } from "./actions";
@@ -55,6 +56,13 @@ export default async function Page({
     .from("completion_media")
     .select("id,purpose,mime_type")
     .eq("job_id", id);
+  const { data: incidents } = await supabase
+    .from("incidents")
+    .select(
+      "id,category,status,reported_at,customer_visible_summary,incident_evidence(id,evidence_type,description,created_at)",
+    )
+    .eq("job_id", id)
+    .order("reported_at", { ascending: false });
   const media = await Promise.all(
     (job.job_media || []).map(async (item) => {
       const { data } = await supabase.storage
@@ -294,6 +302,46 @@ export default async function Page({
           <button className="btn-primary md:col-span-2">Submit report</button>
         </form>
       </section>
+      {Boolean(incidents?.length) && (
+        <section className="card mt-8">
+          <p className="eyebrow">Reported concerns</p>
+          <h2 className="mt-2 text-2xl font-black">Incident history</h2>
+          <div className="mt-5 grid gap-4">
+            {incidents?.map((incident) => (
+              <article key={incident.id} className="rounded-2xl border p-5">
+                <div className="flex flex-wrap justify-between gap-2">
+                  <strong className="capitalize">
+                    {incident.category.replaceAll("_", " ")}
+                  </strong>
+                  <span className="text-xs font-bold uppercase">
+                    {incident.status.replaceAll("_", " ")}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-slate">
+                  {incident.customer_visible_summary ||
+                    "Awaiting MUBER review."}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {incident.incident_evidence?.map((evidence) => (
+                    <a
+                      key={evidence.id}
+                      href={`/api/incident-evidence/${evidence.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-xl border px-3 py-2 text-sm font-bold"
+                    >
+                      View {evidence.evidence_type}
+                    </a>
+                  ))}
+                </div>
+                {!["resolved", "closed", "void"].includes(incident.status) && (
+                  <IncidentEvidenceUpload incident={incident.id} />
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
         <section className="card">
           <h2 className="text-xl font-black">Submitted scope</h2>

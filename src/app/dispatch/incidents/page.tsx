@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from "next/link";
 import { RoleShell } from "@/components/role-shell";
+import { IncidentEvidenceUpload } from "@/components/incident-evidence-upload";
 import { requireOperationalRole } from "@/lib/authorization";
 import { closeJob, reviewIncident } from "./actions";
 
@@ -17,7 +18,7 @@ export default async function IncidentQueue({
   const { data: incidents } = await supabase
     .from("incidents")
     .select(
-      "id,job_id,category,reported_severity,internal_severity,status,reported_at,description,injury_indicator,emergency_services_indicator,damage_indicator,missing_item_indicator,hazard_indicator,jobs(reference,status)",
+      "id,job_id,category,reported_severity,internal_severity,status,reported_at,description,injury_indicator,emergency_services_indicator,damage_indicator,missing_item_indicator,hazard_indicator,jobs(reference,status),incident_evidence(id,evidence_type,description,created_at)",
     )
     .order("reported_at", { ascending: false });
   const { data: completed } =
@@ -79,6 +80,22 @@ export default async function IncidentQueue({
                 .filter(Boolean)
                 .join(", ") || "none"}
             </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(item.incident_evidence || []).map((evidence: any) => (
+                <a
+                  key={evidence.id}
+                  href={`/api/incident-evidence/${evidence.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-xl border px-3 py-2 text-sm font-bold"
+                >
+                  View {evidence.evidence_type}
+                </a>
+              ))}
+            </div>
+            {!["resolved", "closed", "void"].includes(item.status) && (
+              <IncidentEvidenceUpload incident={item.id} />
+            )}
             {!["resolved", "closed", "void"].includes(item.status) && (
               <form
                 action={reviewIncident}
