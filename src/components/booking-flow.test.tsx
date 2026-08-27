@@ -1,9 +1,10 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { BookingFlow } from "./booking-flow";
 import { ToastProvider } from "./toast";
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 describe("booking flow", () => {
   it("renders a move and advances with semantic step headings", async () => {
     render(

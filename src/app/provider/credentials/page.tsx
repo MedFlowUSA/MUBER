@@ -22,13 +22,16 @@ export default async function CredentialsPage({ searchParams }: Props) {
     "/provider/credentials",
   );
   const params = await searchParams;
-  const { data: credentials } = await supabase
-    .from("provider_credentials")
-    .select(
-      "id,credential_type,issuing_authority,expires_at,verification_status,submitted_at,rejection_reason,private_storage_path",
-    )
-    .order("created_at", { ascending: false });
-  const today = Date.now();
+  const [{ data: credentials }, { data: serviceDate }] = await Promise.all([
+    supabase
+      .from("provider_credentials")
+      .select(
+        "id,credential_type,issuing_authority,expires_at,verification_status,submitted_at,rejection_reason,private_storage_path",
+      )
+      .order("created_at", { ascending: false }),
+    supabase.rpc("current_service_date"),
+  ]);
+  const today = new Date(`${serviceDate}T00:00:00`).getTime();
   return (
     <RoleShell role="provider">
       <Link

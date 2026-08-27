@@ -350,4 +350,12 @@ describe("portal separation", () => {
     expect(script).toContain("job_message_attachments");
     expect(script).not.toContain("muber-m2ej2e7r2");
   });
+  it("derives credential warning dates from the database clock", () => {
+    const page = fs.readFileSync(
+      path.join(process.cwd(), "src/app/provider/credentials/page.tsx"),
+      "utf8",
+    );
+    expect(page).toContain('rpc("current_service_date")');
+    expect(page).not.toContain("Date.now()");
+  });
 });

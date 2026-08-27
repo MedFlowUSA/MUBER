@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -49,13 +50,16 @@ export function BookingFlow({ service }: { service: ServiceKind }) {
   const [submitted, setSubmitted] = useState("");
   const [busy, setBusy] = useState(false);
   const toast = useToast();
+  const router = useRouter();
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved)
-        setDraft({ ...emptyDraft(service), ...JSON.parse(saved), service });
-    } catch {}
-    setReady(true);
+    queueMicrotask(() => {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved)
+          setDraft({ ...emptyDraft(service), ...JSON.parse(saved), service });
+      } catch {}
+      setReady(true);
+    });
   }, [service, storageKey]);
   useEffect(() => {
     if (ready) localStorage.setItem(storageKey, JSON.stringify(draft));
@@ -89,7 +93,7 @@ export function BookingFlow({ service }: { service: ServiceKind }) {
         body: JSON.stringify({ draft, idempotencyKey: key }),
       });
       if (response.status === 401) {
-        window.location.assign(
+        router.push(
           `/auth/login?next=${encodeURIComponent(location.pathname)}`,
         );
         return;
