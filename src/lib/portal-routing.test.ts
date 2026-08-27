@@ -205,4 +205,18 @@ describe("portal separation", () => {
     expect(migration).toContain("'liability_admitted',false");
     expect(migration).toContain("'payment_processed',false");
   });
+
+  it("indexes and server-counts the paginated dispatch queue", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0038_dispatch_queue_pagination.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("jobs_dispatch_queue_idx");
+    expect(migration).toContain("jobs_reference_prefix_idx");
+    expect(migration).toContain("dispatch_queue_counts");
+    expect(migration).toContain("public.has_any_role");
+  });
 });
