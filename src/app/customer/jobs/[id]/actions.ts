@@ -88,3 +88,35 @@ export async function respondToInformationRequest(form: FormData) {
   revalidatePath(`/customer/jobs/${job}`);
   redirect(`/customer/jobs/${job}?information_sent=1`);
 }
+export async function requestCancellation(form: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const job = String(form.get("job") || "");
+  const { error } = await supabase.rpc("request_my_job_cancellation", {
+    p_job: job,
+    p_reason: String(form.get("reason") || ""),
+    p_note: String(form.get("note") || ""),
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error)
+    redirect(
+      `/customer/jobs/${job}?error=${encodeURIComponent(error.message)}`,
+    );
+  revalidatePath("/customer");
+  revalidatePath(`/customer/jobs/${job}`);
+  redirect(`/customer/jobs/${job}?cancellation_requested=1`);
+}
+export async function withdrawCancellation(form: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const job = String(form.get("job") || "");
+  const { error } = await supabase.rpc("withdraw_my_job_cancellation", {
+    p_request: String(form.get("request") || ""),
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error)
+    redirect(
+      `/customer/jobs/${job}?error=${encodeURIComponent(error.message)}`,
+    );
+  revalidatePath("/customer");
+  revalidatePath(`/customer/jobs/${job}`);
+  redirect(`/customer/jobs/${job}?cancellation_withdrawn=1`);
+}

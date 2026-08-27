@@ -8,8 +8,10 @@ import { statusForCustomer } from "@/lib/job-status";
 import {
   acceptQuote,
   reportIncident,
+  requestCancellation,
   respondToCompletion,
   respondToInformationRequest,
+  withdrawCancellation,
 } from "./actions";
 type CustomerQuote = {
   id: string;
@@ -34,6 +36,8 @@ export default async function Page({
     completion_response?: string;
     incident_reported?: string;
     information_sent?: string;
+    cancellation_requested?: string;
+    cancellation_withdrawn?: string;
   }>;
 }) {
   const { id } = await params;
@@ -76,6 +80,13 @@ export default async function Page({
     )
     .eq("job_id", id)
     .order("created_at", { ascending: false });
+  const { data: cancellationRequests } = await supabase
+    .from("job_cancellation_requests")
+    .select(
+      "id,reason,customer_note,status,requested_at,decision_at,customer_decision,job_cancellation_events(event_type,customer_visible_message,occurred_at)",
+    )
+    .eq("job_id", id)
+    .order("requested_at", { ascending: false });
   const media = await Promise.all(
     (job.job_media || []).map(async (item) => {
       const { data } = await supabase.storage
@@ -127,6 +138,96 @@ export default async function Page({
           Your response was sent. MUBER will continue reviewing your request.
         </p>
       )}
+      {query.cancellation_requested && (
+        <p className="mt-5 rounded-xl bg-amber-50 p-4 text-amber-900">
+          Your cancellation request is awaiting MUBER review. Your job remains
+          active until a decision is recorded. No fee, payment, or refund was
+          processed.
+        </p>
+      )}
+      {query.cancellation_withdrawn && (
+        <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
+          Your cancellation request was withdrawn. The job was not canceled.
+        </p>
+      )}
+      <section className="card mt-8">
+        <p className="eyebrow">Cancellation</p>
+        <h2 className="mt-2 text-2xl font-black">Cancellation requests</h2>
+        {!cancellationRequests?.some((item) =>
+          ["requested", "under_review"].includes(item.status),
+        ) &&
+          !["completed", "closed", "cancelled"].includes(job.status) && (
+            <form action={requestCancellation} className="mt-5 grid gap-3">
+              <input type="hidden" name="job" value={job.id} />
+              <label className="font-bold">
+                Reason
+                <select
+                  name="reason"
+                  required
+                  className="mt-1 block w-full rounded-xl border p-3 font-normal"
+                >
+                  <option value="">Choose a reason</option>
+                  <option value="plans_changed">Plans changed</option>
+                  <option value="schedule_changed">Schedule changed</option>
+                  <option value="service_no_longer_needed">
+                    Service no longer needed
+                  </option>
+                  <option value="duplicate_request">Duplicate request</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <label className="font-bold">
+                Optional note
+                <textarea
+                  name="note"
+                  maxLength={2000}
+                  placeholder="Add helpful context. A note of at least 10 characters is required when choosing Other."
+                  className="mt-1 min-h-24 w-full rounded-xl border p-3 font-normal"
+                />
+              </label>
+              <button className="rounded-xl border border-red-300 px-5 py-3 font-bold text-red-700">
+                Request cancellation review
+              </button>
+            </form>
+          )}
+        <div className="mt-5 grid gap-3">
+          {(cancellationRequests || []).map((item) => (
+            <article key={item.id} className="rounded-2xl border p-5">
+              <div className="flex flex-wrap justify-between gap-3">
+                <strong className="capitalize">
+                  {item.reason.replaceAll("_", " ")}
+                </strong>
+                <span className="text-xs font-bold uppercase">
+                  {item.status.replaceAll("_", " ")}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-slate">
+                Requested {new Date(item.requested_at).toLocaleString()}
+              </p>
+              {item.customer_note && (
+                <p className="mt-2 whitespace-pre-wrap">{item.customer_note}</p>
+              )}
+              {item.customer_decision && (
+                <p className="mt-3 rounded-xl bg-warm p-3">
+                  {item.customer_decision}
+                </p>
+              )}
+              {["requested", "under_review"].includes(item.status) && (
+                <form action={withdrawCancellation} className="mt-4">
+                  <input type="hidden" name="job" value={job.id} />
+                  <input type="hidden" name="request" value={item.id} />
+                  <button className="rounded-xl border px-4 py-2 font-bold">
+                    Withdraw request
+                  </button>
+                </form>
+              )}
+            </article>
+          ))}
+          {!cancellationRequests?.length && (
+            <p className="text-sm text-slate">No cancellation requests.</p>
+          )}
+        </div>
+      </section>
       {Boolean(informationRequests?.length) && (
         <section className="card mt-8">
           <p className="eyebrow">Information requests</p>

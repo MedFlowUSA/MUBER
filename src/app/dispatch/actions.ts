@@ -52,6 +52,28 @@ export async function requestCustomerInformation(form: FormData) {
   revalidatePath(`/dispatch/jobs/${job}`);
   redirect(`/dispatch/jobs/${job}?information_requested=1`);
 }
+export async function reviewCancellation(form: FormData) {
+  const { supabase } = await requireOperationalRole(
+    ["dispatcher", "super_admin"],
+    "/dispatch",
+  );
+  const job = String(form.get("job") || "");
+  const { error } = await supabase.rpc("review_job_cancellation", {
+    p_request: String(form.get("request") || ""),
+    p_action: String(form.get("review_action") || ""),
+    p_customer_message: String(form.get("customer_message") || ""),
+    p_internal_reason: String(form.get("internal_reason") || ""),
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error)
+    redirect(
+      `/dispatch/jobs/${job}?error=${encodeURIComponent(error.message)}`,
+    );
+  revalidatePath("/dispatch");
+  revalidatePath(`/dispatch/jobs/${job}`);
+  revalidatePath(`/customer/jobs/${job}`);
+  redirect(`/dispatch/jobs/${job}?cancellation_reviewed=1`);
+}
 export async function saveJobReview(form: FormData) {
   const { supabase } = await requireOperationalRole(
     ["dispatcher", "super_admin"],

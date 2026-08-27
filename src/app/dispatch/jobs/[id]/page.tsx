@@ -8,6 +8,7 @@ import {
   createProviderOffer,
   createQuote,
   requestCustomerInformation,
+  reviewCancellation,
   saveJobReview,
   sendQuote,
   transitionJob,
@@ -23,6 +24,7 @@ type Props = {
     sent?: string;
     offered?: string;
     information_requested?: string;
+    cancellation_reviewed?: string;
   }>;
 };
 const first = <T,>(value: T | T[] | null) =>
@@ -76,6 +78,13 @@ export default async function DispatchJob({ params, searchParams }: Props) {
     )
     .eq("job_id", job.id)
     .order("created_at", { ascending: false });
+  const { data: cancellationRequests } = await supabase
+    .from("job_cancellation_requests")
+    .select(
+      "id,reason,customer_note,status,requested_at,job_state_at_request,assignment_state_at_request,scheduled_start_at_request,customer_decision,internal_decision_reason,job_cancellation_events(event_type,customer_visible_message,internal_reason,occurred_at)",
+    )
+    .eq("job_id", job.id)
+    .order("requested_at", { ascending: false });
   const [{ data: baseEligibility }, { data: scheduleEligibility }] =
     job.status === "ready_for_matching"
       ? await Promise.all([
@@ -116,7 +125,8 @@ export default async function DispatchJob({ params, searchParams }: Props) {
         query.reviewed ||
         query.quote ||
         query.sent ||
-        query.offered) && (
+        query.offered ||
+        query.cancellation_reviewed) && (
         <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
           Operational record updated and audited.
         </p>
@@ -423,6 +433,113 @@ export default async function DispatchJob({ params, searchParams }: Props) {
           </div>
         </section>
       )}
+      <section className="card mt-5">
+        <h2 className="text-xl font-black">Cancellation review</h2>
+        <p className="mt-2 text-sm text-slate">
+          A request does not cancel the job. Approval uses the audited job state
+          command and records no payment, fee, or refund action.
+        </p>
+        <div className="mt-5 grid gap-4">
+          {(cancellationRequests || []).map((item) => (
+            <article key={item.id} className="rounded-2xl border p-5">
+              <div className="flex flex-wrap justify-between gap-3">
+                <strong className="capitalize">
+                  {item.reason.replaceAll("_", " ")}
+                </strong>
+                <span className="text-xs font-bold uppercase">
+                  {item.status.replaceAll("_", " ")}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-slate">
+                Requested {new Date(item.requested_at).toLocaleString()} · job
+                was {item.job_state_at_request.replaceAll("_", " ")} ·
+                assignment was{" "}
+                {item.assignment_state_at_request?.replaceAll("_", " ") ||
+                  "unassigned"}
+              </p>
+              {item.scheduled_start_at_request && (
+                <p className="mt-1 text-sm text-slate">
+                  Scheduled start:{" "}
+                  {new Date(item.scheduled_start_at_request).toLocaleString()}
+                </p>
+              )}
+              {item.customer_note && (
+                <p className="mt-3 whitespace-pre-wrap rounded-xl bg-warm p-3">
+                  <strong>Customer note:</strong> {item.customer_note}
+                </p>
+              )}
+              {item.internal_decision_reason && (
+                <p className="mt-3 text-sm text-red-800">
+                  <strong>Internal decision:</strong>{" "}
+                  {item.internal_decision_reason}
+                </p>
+              )}
+              {item.customer_decision && (
+                <p className="mt-2 text-sm">
+                  <strong>Customer message:</strong> {item.customer_decision}
+                </p>
+              )}
+              {item.status === "requested" && (
+                <form action={reviewCancellation} className="mt-4">
+                  <input type="hidden" name="job" value={job.id} />
+                  <input type="hidden" name="request" value={item.id} />
+                  <input
+                    type="hidden"
+                    name="review_action"
+                    value="start_review"
+                  />
+                  <button className="rounded-xl border px-4 py-2 font-bold">
+                    Start review
+                  </button>
+                </form>
+              )}
+              {["requested", "under_review"].includes(item.status) && (
+                <form action={reviewCancellation} className="mt-4 grid gap-3">
+                  <input type="hidden" name="job" value={job.id} />
+                  <input type="hidden" name="request" value={item.id} />
+                  <textarea
+                    name="customer_message"
+                    required
+                    minLength={10}
+                    maxLength={2000}
+                    placeholder="Customer-visible decision explanation"
+                    className="min-h-20 rounded-xl border p-3"
+                  />
+                  <textarea
+                    name="internal_reason"
+                    required
+                    minLength={10}
+                    maxLength={4000}
+                    placeholder="Specific internal decision reason"
+                    className="min-h-20 rounded-xl border p-3"
+                  />
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      name="review_action"
+                      value="approve"
+                      className="rounded-xl bg-red-700 px-4 py-3 font-bold text-white"
+                    >
+                      Approve cancellation
+                    </button>
+                    <button
+                      name="review_action"
+                      value="decline"
+                      className="rounded-xl border px-4 py-3 font-bold"
+                    >
+                      Decline request
+                    </button>
+                  </div>
+                </form>
+              )}
+            </article>
+          ))}
+          {!cancellationRequests?.length && (
+            <p className="text-sm text-slate">
+              No cancellation requests for this job.
+            </p>
+          )}
+        </div>
+      </section>
       <section className="card mt-5">
         <h2 className="text-xl font-black">Customer information requests</h2>
         {["submitted", "needs_review"].includes(job.status) && (

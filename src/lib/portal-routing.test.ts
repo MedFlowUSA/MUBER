@@ -152,4 +152,20 @@ describe("portal separation", () => {
     expect(migration).not.toContain("delete from public.vehicles");
     expect(migration).not.toContain("delete from public.crews");
   });
+
+  it("requires reviewed, owned, and audited customer cancellations", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0035_customer_cancellation_requests.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("public.owns_job(p_job)");
+    expect(migration).toContain("one_open_cancellation_request_per_job");
+    expect(migration).toContain("immutable_job_cancellation_events");
+    expect(migration).toContain("public.transition_job");
+    expect(migration).toContain("'payment_action',false");
+    expect(migration).not.toContain("delete from public.jobs");
+  });
 });
