@@ -1,21 +1,51 @@
 import Link from "next/link";
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
+import {
+  CREDENTIAL_STATUSES,
+  parseComplianceQueueQuery,
+} from "@/lib/queue-query";
 import { reviewCredential } from "./actions";
 
-type Props = { searchParams: Promise<{ error?: string; reviewed?: string }> };
+type Props = {
+  searchParams: Promise<{
+    error?: string;
+    reviewed?: string;
+    status?: string;
+    type?: string;
+    page?: string;
+  }>;
+};
 export default async function CredentialReviews({ searchParams }: Props) {
   const { supabase } = await requireOperationalRole(
     ["compliance_admin", "super_admin"],
     "/admin/credentials",
   );
   const params = await searchParams;
-  const { data: credentials } = await supabase
+  const filters = parseComplianceQueueQuery(params, "credential");
+  let credentialQuery = supabase
     .from("provider_credentials")
     .select(
       "id,credential_type,credential_number,issuing_authority,expires_at,verification_status,submitted_at,rejection_reason,private_storage_path,provider_companies(legal_name)",
-    )
-    .order("submitted_at", { ascending: false });
+      { count: "exact" },
+    );
+  if (filters.status)
+    credentialQuery = credentialQuery.eq("verification_status", filters.status);
+  if (filters.type)
+    credentialQuery = credentialQuery.eq("credential_type", filters.type);
+  const start = (filters.page - 1) * filters.pageSize;
+  const { data: credentials, count } = await credentialQuery
+    .order("submitted_at", { ascending: false, nullsFirst: false })
+    .order("id", { ascending: false })
+    .range(start, start + filters.pageSize - 1);
+  const pages = Math.max(1, Math.ceil((count || 0) / filters.pageSize));
+  const href = (page: number) => {
+    const p = new URLSearchParams();
+    if (filters.status) p.set("status", filters.status);
+    if (filters.type) p.set("type", filters.type);
+    p.set("page", String(page));
+    return `/admin/credentials?${p}`;
+  };
   return (
     <RoleShell role="admin">
       <Link href="/admin" className="text-sm font-bold text-orange-600">
@@ -33,6 +63,26 @@ export default async function CredentialReviews({ searchParams }: Props) {
           Decision recorded and audited.
         </p>
       )}
+      <form className="mt-6 grid gap-3 rounded-2xl border bg-white p-4 md:grid-cols-[1fr_1fr_auto]">
+        <input
+          name="type"
+          defaultValue={filters.type}
+          maxLength={60}
+          placeholder="Exact credential type"
+          className="rounded-xl border p-3"
+        />
+        <select
+          name="status"
+          defaultValue={filters.status}
+          className="rounded-xl border p-3"
+        >
+          <option value="">All statuses</option>
+          {CREDENTIAL_STATUSES.map((status) => (
+            <option key={status}>{status.replaceAll("_", " ")}</option>
+          ))}
+        </select>
+        <button className="btn-primary">Apply filters</button>
+      </form>
       <div className="mt-8 grid gap-4">
         {(credentials || []).map((c) => (
           <article
@@ -118,6 +168,23 @@ export default async function CredentialReviews({ searchParams }: Props) {
             No credentials have been submitted.
           </p>
         )}
+      </div>
+      <div className="mt-5 flex items-center justify-between">
+        <Link
+          href={href(Math.max(1, filters.page - 1))}
+          className={`btn-ghost ${filters.page <= 1 ? "pointer-events-none opacity-50" : ""}`}
+        >
+          Previous
+        </Link>
+        <span className="text-sm font-bold">
+          Page {filters.page} of {pages} · {count || 0}
+        </span>
+        <Link
+          href={href(Math.min(pages, filters.page + 1))}
+          className={`btn-ghost ${filters.page >= pages ? "pointer-events-none opacity-50" : ""}`}
+        >
+          Next
+        </Link>
       </div>
     </RoleShell>
   );

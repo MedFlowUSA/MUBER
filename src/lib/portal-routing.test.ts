@@ -219,4 +219,18 @@ describe("portal separation", () => {
     expect(migration).toContain("dispatch_queue_counts");
     expect(migration).toContain("public.has_any_role");
   });
+  it("paginates sensitive compliance queues without raw audit metadata", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0039_compliance_queue_pagination.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("credentials_review_queue_idx");
+    expect(migration).toContain("completion_review_queue_idx");
+    expect(migration).toContain("get_admin_audit_feed_page");
+    expect(migration).toContain("count(*) over()");
+    expect(migration).not.toContain("returns table(id uuid,metadata");
+  });
 });

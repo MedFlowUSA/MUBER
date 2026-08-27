@@ -2,23 +2,47 @@
 import Link from "next/link";
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
+import {
+  COMPLETION_STATUSES,
+  parseComplianceQueueQuery,
+} from "@/lib/queue-query";
 import { reviewCompletion } from "./actions";
 export default async function CompletionQueue({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; updated?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    updated?: string;
+    status?: string;
+    page?: string;
+  }>;
 }) {
   const { supabase } = await requireOperationalRole(
     ["dispatcher", "super_admin"],
     "/dispatch/completions",
   );
   const query = await searchParams;
-  const { data: rows } = await supabase
+  const filters = parseComplianceQueueQuery(query, "completion");
+  let completionQuery = supabase
     .from("completion_submissions")
     .select(
       "id,status,completion_at,work_summary,items_summary,customer_summary,damage_declared,incident_declared,missing_item_declared,access_issue_declared,additional_scope_declared,disposal_receipt_status,customer_confirmation_status,jobs(reference,service,preferred_start),provider_companies(legal_name),crews(name),completion_media(id,purpose,customer_visible,mime_type)",
-    )
-    .order("created_at", { ascending: false });
+      { count: "exact" },
+    );
+  if (filters.status)
+    completionQuery = completionQuery.eq("status", filters.status);
+  const start = (filters.page - 1) * filters.pageSize;
+  const { data: rows, count } = await completionQuery
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(start, start + filters.pageSize - 1);
+  const pages = Math.max(1, Math.ceil((count || 0) / filters.pageSize));
+  const href = (page: number) => {
+    const p = new URLSearchParams();
+    if (filters.status) p.set("status", filters.status);
+    p.set("page", String(page));
+    return `/dispatch/completions?${p}`;
+  };
   return (
     <RoleShell role="dispatch">
       <Link href="/dispatch" className="text-sm font-bold text-orange-600">
@@ -36,6 +60,19 @@ export default async function CompletionQueue({
           Review action recorded and audited.
         </p>
       )}
+      <form className="mt-6 grid gap-3 rounded-2xl border bg-white p-4 sm:grid-cols-[1fr_auto]">
+        <select
+          name="status"
+          defaultValue={filters.status}
+          className="rounded-xl border p-3"
+        >
+          <option value="">All statuses</option>
+          {COMPLETION_STATUSES.map((status) => (
+            <option key={status}>{status.replaceAll("_", " ")}</option>
+          ))}
+        </select>
+        <button className="btn-primary">Apply filter</button>
+      </form>
       <div className="mt-8 grid gap-5">
         {(rows || []).map((s: any) => (
           <article key={s.id} className="rounded-2xl border bg-white p-6">
@@ -158,6 +195,23 @@ export default async function CompletionQueue({
             No completion submissions.
           </p>
         )}
+      </div>
+      <div className="mt-5 flex items-center justify-between">
+        <Link
+          href={href(Math.max(1, filters.page - 1))}
+          className={`btn-ghost ${filters.page <= 1 ? "pointer-events-none opacity-50" : ""}`}
+        >
+          Previous
+        </Link>
+        <span className="text-sm font-bold">
+          Page {filters.page} of {pages} · {count || 0}
+        </span>
+        <Link
+          href={href(Math.min(pages, filters.page + 1))}
+          className={`btn-ghost ${filters.page >= pages ? "pointer-events-none opacity-50" : ""}`}
+        >
+          Next
+        </Link>
       </div>
     </RoleShell>
   );

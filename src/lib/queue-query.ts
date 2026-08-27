@@ -143,3 +143,55 @@ export function parseIncidentQueueQuery(input: {
     pageSize: 20,
   };
 }
+
+export const CREDENTIAL_STATUSES = [
+  "missing",
+  "submitted",
+  "under_review",
+  "verified",
+  "rejected",
+  "expiring",
+  "expired",
+  "suspended",
+] as const;
+export const COMPLETION_STATUSES = [
+  "pending_review",
+  "under_review",
+  "more_information_requested",
+  "returned_to_provider",
+  "incident_review_required",
+  "approved",
+  "voided",
+] as const;
+const safeCode = (value?: string, max = 60) => {
+  const q = String(value || "")
+    .trim()
+    .toLowerCase()
+    .slice(0, max);
+  return /^[a-z0-9._-]*$/.test(q) ? q : "";
+};
+export function parseComplianceQueueQuery(
+  input: { status?: string; type?: string; page?: string },
+  kind: "credential" | "completion",
+) {
+  const statuses =
+    kind === "credential" ? CREDENTIAL_STATUSES : COMPLETION_STATUSES;
+  return {
+    status: statuses.includes(input.status as never) ? input.status! : "",
+    type: safeCode(input.type),
+    page: boundedPage(input.page),
+    pageSize: 20,
+  };
+}
+export function parseAuditQueueQuery(input: {
+  action?: string;
+  entity?: string;
+  page?: string;
+}) {
+  return {
+    action: safeCode(input.action),
+    entity: safeCode(input.entity),
+    page: boundedPage(input.page),
+    pageSize: 25,
+  };
+}

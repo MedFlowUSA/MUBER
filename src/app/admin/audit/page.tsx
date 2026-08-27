@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
+import { parseAuditQueueQuery } from "@/lib/queue-query";
 
 type AuditRow = {
   id: string;
@@ -9,16 +10,37 @@ type AuditRow = {
   entity_type: string;
   entity_id: string | null;
   occurred_at: string;
+  total_count: number;
 };
 
-export default async function AuditFeed() {
+export default async function AuditFeed({
+  searchParams,
+}: {
+  searchParams: Promise<{ action?: string; entity?: string; page?: string }>;
+}) {
   const { supabase } = await requireOperationalRole(
     ["compliance_admin", "super_admin"],
     "/admin/audit",
   );
-  const { data: events, error } = await supabase.rpc("get_admin_audit_feed", {
-    p_limit: 150,
-  });
+  const filters = parseAuditQueueQuery(await searchParams);
+  const { data: events, error } = await supabase.rpc(
+    "get_admin_audit_feed_page",
+    {
+      p_action_prefix: filters.action,
+      p_entity_type: filters.entity,
+      p_limit: filters.pageSize,
+      p_offset: (filters.page - 1) * filters.pageSize,
+    },
+  );
+  const count = Number((events?.[0] as AuditRow | undefined)?.total_count || 0),
+    pages = Math.max(1, Math.ceil(count / filters.pageSize));
+  const href = (page: number) => {
+    const p = new URLSearchParams();
+    if (filters.action) p.set("action", filters.action);
+    if (filters.entity) p.set("entity", filters.entity);
+    p.set("page", String(page));
+    return `/admin/audit?${p}`;
+  };
   return (
     <RoleShell role="admin">
       <Link href="/admin" className="text-sm font-bold text-orange-600">
@@ -35,6 +57,23 @@ export default async function AuditFeed() {
           Audit activity could not be loaded.
         </p>
       )}
+      <form className="mt-6 grid gap-3 rounded-2xl border bg-white p-4 md:grid-cols-[1fr_1fr_auto]">
+        <input
+          name="action"
+          defaultValue={filters.action}
+          maxLength={60}
+          placeholder="Action prefix, e.g. provider."
+          className="rounded-xl border p-3"
+        />
+        <input
+          name="entity"
+          defaultValue={filters.entity}
+          maxLength={60}
+          placeholder="Exact entity type"
+          className="rounded-xl border p-3"
+        />
+        <button className="btn-primary">Apply filters</button>
+      </form>
       <div className="mt-8 overflow-hidden rounded-2xl border bg-white">
         <div className="hidden grid-cols-[1.2fr_1fr_1fr_auto] gap-4 border-b bg-warm p-4 text-xs font-black uppercase md:grid">
           <span>Action</span>
@@ -60,6 +99,23 @@ export default async function AuditFeed() {
             No authorized audit events are available.
           </p>
         )}
+      </div>
+      <div className="mt-5 flex items-center justify-between">
+        <Link
+          href={href(Math.max(1, filters.page - 1))}
+          className={`btn-ghost ${filters.page <= 1 ? "pointer-events-none opacity-50" : ""}`}
+        >
+          Previous
+        </Link>
+        <span className="text-sm font-bold">
+          Page {filters.page} of {pages} · {count}
+        </span>
+        <Link
+          href={href(Math.min(pages, filters.page + 1))}
+          className={`btn-ghost ${filters.page >= pages ? "pointer-events-none opacity-50" : ""}`}
+        >
+          Next
+        </Link>
       </div>
     </RoleShell>
   );

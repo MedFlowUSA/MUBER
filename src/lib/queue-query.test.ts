@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  parseAuditQueueQuery,
+  parseComplianceQueueQuery,
   parseIncidentQueueQuery,
   parseProviderQueueQuery,
   parseQueueQuery,
@@ -35,4 +37,15 @@ describe("queue query validation", () => {
     expect(
       parseIncidentQueueQuery({ incident: "not-an-id", status: "invented" }),
     ).toMatchObject({ incident: "", status: "", page: 1 }));
+  it("validates compliance and audit filters", () => {
+    expect(
+      parseComplianceQueueQuery(
+        { status: "verified", type: "general_liability", page: "2" },
+        "credential",
+      ),
+    ).toMatchObject({ status: "verified", type: "general_liability", page: 2 });
+    expect(
+      parseAuditQueueQuery({ action: "provider.", entity: "provider_company" }),
+    ).toMatchObject({ action: "provider.", entity: "provider_company" });
+  });
 });
