@@ -40,7 +40,6 @@ describe("operational job controls", () => {
       "start_en_route",
       "mark_arrived",
       "start_work",
-      "request_completion_review",
     ]);
     expect(
       Object.values(dispatchCommands)

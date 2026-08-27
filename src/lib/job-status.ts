@@ -72,10 +72,6 @@ export const crewFieldActions: Record<
   ready: { command: "start_en_route", label: "Start en route" },
   en_route: { command: "mark_arrived", label: "Report arrival" },
   arrived: { command: "start_work", label: "Start work" },
-  in_progress: {
-    command: "request_completion_review",
-    label: "Submit for completion review",
-  },
 };
 export const dispatchCommands: Record<
   string,

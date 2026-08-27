@@ -1,6 +1,8 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { createHash, randomBytes } from "node:crypto";
 import { requireOperationalRole } from "@/lib/authorization";
 const csv = (v: FormDataEntryValue | null) =>
   String(v || "")
@@ -55,16 +57,41 @@ export async function createCrew(form: FormData) {
 }
 export async function inviteCrewMember(form: FormData) {
   const { supabase } = await requireOperationalRole(
-    ["provider_owner"],
+    ["provider_owner", "provider_manager"],
     "/provider/fleet",
   );
-  const { error } = await supabase.rpc("create_crew_invitation", {
+  const token = randomBytes(32).toString("hex");
+  const { data, error } = await supabase.rpc("create_secure_crew_invitation", {
     p_crew: String(form.get("crew") || ""),
     p_email: String(form.get("email") || ""),
     p_role: String(form.get("role") || "crew_member"),
+    p_token_hash: createHash("sha256").update(token).digest("hex"),
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error)
+    redirect(`/provider/fleet?error=${encodeURIComponent(error.message)}`);
+  const jar = await cookies();
+  jar.set("muber_invitation_handoff", JSON.stringify({ id: data, token }), {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    path: "/provider/fleet",
+    maxAge: 600,
+  });
+  revalidatePath("/provider/fleet");
+  redirect("/provider/fleet?invited=1");
+}
+export async function revokeCrewInvitation(form: FormData) {
+  const { supabase } = await requireOperationalRole(
+    ["provider_owner", "provider_manager"],
+    "/provider/fleet",
+  );
+  const { error } = await supabase.rpc("revoke_crew_invitation", {
+    p_invitation: String(form.get("invitation") || ""),
+    p_request_id: crypto.randomUUID(),
   });
   if (error)
     redirect(`/provider/fleet?error=${encodeURIComponent(error.message)}`);
   revalidatePath("/provider/fleet");
-  redirect("/provider/fleet?invited=1");
+  redirect("/provider/fleet?revoked=1");
 }

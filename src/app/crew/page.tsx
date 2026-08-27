@@ -1,4 +1,5 @@
 import { RoleShell } from "@/components/role-shell";
+import Link from "next/link";
 import { requireOperationalRole } from "@/lib/authorization";
 import { crewFieldActions } from "@/lib/job-status";
 import { advanceFieldWork, confirmCrewAssignment } from "./actions";
@@ -35,6 +36,7 @@ export default async function CrewPage({
     error?: string;
     confirmed?: string;
     advanced?: string;
+    activated?: string;
   }>;
 }) {
   const { supabase, profile } = await requireOperationalRole(
@@ -65,6 +67,15 @@ export default async function CrewPage({
         <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
           Field status recorded and the customer timeline updated.
         </p>
+      )}
+      {query.activated && (
+        <div className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-900">
+          <p className="font-black">Crew account activated</p>
+          <p className="mt-1 text-sm">
+            Your verified account is connected to this provider crew. Location
+            tracking and MUBER payments are not active.
+          </p>
+        </div>
       )}
       <div className="mt-8 grid gap-5">
         {((assignments || []) as unknown as CrewAssignment[]).map((a) => (
@@ -148,6 +159,30 @@ export default async function CrewPage({
                   {crewFieldActions[a.status].label}
                 </button>
               </form>
+            )}
+            {profile.role === "crew_lead" && a.status === "in_progress" && (
+              <Link
+                href={`/crew/completion/${a.id}`}
+                className="mt-5 inline-flex rounded-xl bg-orange-600 px-5 py-3 font-bold text-white"
+              >
+                Document completion
+              </Link>
+            )}
+            {a.status === "completion_review" && (
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link
+                  href={`/crew/completion/${a.id}`}
+                  className="rounded-xl bg-orange-600 px-5 py-3 font-bold text-white"
+                >
+                  Respond to review request
+                </Link>
+                <Link
+                  href={`/crew/completion/${a.id}/evidence`}
+                  className="rounded-xl border border-orange-600 px-5 py-3 font-bold text-orange-700"
+                >
+                  Manage completion evidence
+                </Link>
+              </div>
             )}
           </article>
         ))}

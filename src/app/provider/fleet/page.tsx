@@ -1,13 +1,20 @@
 import Link from "next/link";
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
-import { createCrew, createVehicle, inviteCrewMember } from "./actions";
+import { cookies } from "next/headers";
+import {
+  createCrew,
+  createVehicle,
+  inviteCrewMember,
+  revokeCrewInvitation,
+} from "./actions";
 type Props = {
   searchParams: Promise<{
     error?: string;
     vehicle?: string;
     crew?: string;
     invited?: string;
+    revoked?: string;
   }>;
 };
 export default async function FleetPage({ searchParams }: Props) {
@@ -16,6 +23,14 @@ export default async function FleetPage({ searchParams }: Props) {
     "/provider/fleet",
   );
   const params = await searchParams;
+  const handoffValue = (await cookies()).get("muber_invitation_handoff")?.value;
+  let invitationLink: string | null = null;
+  if (params.invited && handoffValue) {
+    try {
+      const handoff = JSON.parse(handoffValue) as { id: string; token: string };
+      invitationLink = `/crew/invite/${handoff.id}?token=${handoff.token}`;
+    } catch {}
+  }
   const [{ data: vehicles }, { data: crews }, { data: invites }] =
     await Promise.all([
       supabase
@@ -49,6 +64,22 @@ export default async function FleetPage({ searchParams }: Props) {
         <p className="mt-5 rounded-xl bg-red-50 p-4 text-red-800">
           {params.error}
         </p>
+      )}
+      {invitationLink && (
+        <section className="mt-5 rounded-2xl border border-orange-200 bg-orange-50 p-5">
+          <h2 className="font-black">Invitation ready for secure handoff</h2>
+          <p className="mt-2 text-sm text-slate-700">
+            No email was sent. Copy this single-use link now and deliver it to
+            the intended recipient through a trusted channel. It expires in
+            seven days and cannot activate a mismatched or unverified account.
+          </p>
+          <input
+            readOnly
+            aria-label="Crew activation link"
+            value={invitationLink}
+            className="mt-3 w-full rounded-xl border bg-white px-3 py-3 font-mono text-xs"
+          />
+        </section>
       )}
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
         <section>
@@ -245,7 +276,9 @@ export default async function FleetPage({ searchParams }: Props) {
                     .filter(Boolean)
                     .join(", ") || "Capabilities pending"}
                 </p>
-                {profile.role === "provider_owner" && (
+                {["provider_owner", "provider_manager"].includes(
+                  profile.role,
+                ) && (
                   <form
                     action={inviteCrewMember}
                     className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]"
@@ -275,13 +308,37 @@ export default async function FleetPage({ searchParams }: Props) {
               </p>
             )}
           </div>
-          {Boolean(invites?.length) && (
-            <p className="mt-4 text-sm text-slate-600">
-              {invites?.filter((i) => i.status === "pending").length} pending
-              invitation(s). Invitations do not grant access until a verified
-              activation flow is added.
-            </p>
-          )}
+          <div className="mt-6 grid gap-3">
+            {(invites || []).map((invite) => (
+              <article
+                key={invite.id}
+                className="rounded-2xl border bg-white p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-bold">{invite.email}</p>
+                    <p className="text-sm text-slate-600">
+                      {invite.intended_role.replaceAll("_", " ")} ·{" "}
+                      {invite.status} · expires{" "}
+                      {new Date(invite.expires_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {invite.status === "pending" && (
+                    <form action={revokeCrewInvitation}>
+                      <input
+                        type="hidden"
+                        name="invitation"
+                        value={invite.id}
+                      />
+                      <button className="rounded-xl border border-red-300 px-3 py-2 text-sm font-bold text-red-700">
+                        Revoke
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
         </section>
       </div>
     </RoleShell>

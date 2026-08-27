@@ -15,6 +15,11 @@ const queueGroups = [
     statuses: ["quote_accepted", "ready_for_matching", "reassignment_required"],
   },
   { label: "Assigned", statuses: ["assigned", "crew_confirmed", "ready"] },
+  {
+    label: "Active field work",
+    statuses: ["en_route", "arrived", "in_progress"],
+  },
+  { label: "Completion review", statuses: ["completion_review"] },
   { label: "Needs attention", statuses: ["incident_hold"] },
 ];
 const first = <T,>(value: T | T[] | null) =>
@@ -42,9 +47,14 @@ export default async function DispatchPage() {
             state.
           </p>
         </div>
-        <Link href="/dispatch" className="btn-ghost">
-          Refresh queues
-        </Link>
+        <div className="flex gap-3">
+          <Link href="/dispatch/completions" className="btn-primary">
+            Review completions
+          </Link>
+          <Link href="/dispatch" className="btn-ghost">
+            Refresh queues
+          </Link>
+        </div>
       </div>
       {error && (
         <p className="mt-6 rounded-xl bg-red-50 p-4 text-red-800">

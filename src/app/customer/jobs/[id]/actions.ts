@@ -22,3 +22,21 @@ export async function acceptQuote(form: FormData) {
   revalidatePath(`/customer/jobs/${job}`);
   redirect(`/customer/jobs/${job}?accepted=1`);
 }
+
+export async function respondToCompletion(form: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const job = String(form.get("job") || "");
+  const response = String(form.get("response") || "");
+  const { error } = await supabase.rpc("respond_to_completion", {
+    p_submission: String(form.get("submission") || ""),
+    p_response: response,
+    p_note: String(form.get("note") || ""),
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error)
+    redirect(
+      `/customer/jobs/${job}?error=${encodeURIComponent(error.message)}`,
+    );
+  revalidatePath(`/customer/jobs/${job}`);
+  redirect(`/customer/jobs/${job}?completion_response=1`);
+}

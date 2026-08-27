@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { RoleShell } from "@/components/role-shell";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { statusForCustomer } from "@/lib/job-status";
-import { acceptQuote } from "./actions";
+import { acceptQuote, respondToCompletion } from "./actions";
 type CustomerQuote = {
   id: string;
   version: number;
@@ -22,7 +22,11 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; accepted?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    accepted?: string;
+    completion_response?: string;
+  }>;
 }) {
   const { id } = await params;
   const query = await searchParams;
@@ -42,6 +46,14 @@ export default async function Page({
   const { data: quotes } = await supabase.rpc("get_my_quote_versions", {
     p_job: id,
   });
+  const { data: completions } = await supabase.rpc("get_my_completion", {
+    p_job: id,
+  });
+  const completion = completions?.[0];
+  const { data: completionMedia } = await supabase
+    .from("completion_media")
+    .select("id,purpose,mime_type")
+    .eq("job_id", id);
   const media = await Promise.all(
     (job.job_media || []).map(async (item) => {
       const { data } = await supabase.storage
@@ -75,6 +87,81 @@ export default async function Page({
         <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
           Quote accepted. No payment has been collected.
         </p>
+      )}
+      {query.completion_response && (
+        <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
+          Your completion response was recorded. No payment or payout was
+          triggered.
+        </p>
+      )}
+      {completion && (
+        <section className="card mt-8">
+          <p className="eyebrow">Completion review</p>
+          <h2 className="mt-2 text-2xl font-black">Service completion</h2>
+          <p className="mt-4 whitespace-pre-wrap">
+            {completion.customer_review_message || completion.customer_summary}
+          </p>
+          <p className="mt-3 text-sm text-slate">
+            Reported complete{" "}
+            {new Date(completion.completion_at).toLocaleString()}. Payment has
+            not been collected in MUBER.
+          </p>
+          {Boolean(completionMedia?.length) && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {completionMedia?.map((media) => (
+                <a
+                  key={media.id}
+                  href={`/api/completion-media/${media.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-xl border px-3 py-2 text-sm font-bold"
+                >
+                  View {media.purpose.replaceAll("_", " ")}
+                </a>
+              ))}
+            </div>
+          )}
+          {completion.customer_confirmation_status === "requested" && (
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <form action={respondToCompletion}>
+                <input type="hidden" name="job" value={job.id} />
+                <input type="hidden" name="submission" value={completion.id} />
+                <input type="hidden" name="response" value="confirm" />
+                <button className="w-full rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white">
+                  Confirm completion
+                </button>
+              </form>
+              <form action={respondToCompletion} className="grid gap-2">
+                <input type="hidden" name="job" value={job.id} />
+                <input type="hidden" name="submission" value={completion.id} />
+                <textarea
+                  name="note"
+                  required
+                  minLength={10}
+                  placeholder="Tell MUBER what needs attention"
+                  className="min-h-20 rounded-xl border p-3"
+                />
+                <button
+                  name="response"
+                  value="report_problem"
+                  className="rounded-xl border border-red-300 px-5 py-3 font-bold text-red-700"
+                >
+                  Report a problem
+                </button>
+              </form>
+            </div>
+          )}
+          {completion.customer_confirmation_status === "confirmed" && (
+            <p className="mt-5 font-bold text-emerald-700">
+              You confirmed completion.
+            </p>
+          )}
+          {completion.customer_confirmation_status === "problem_reported" && (
+            <p className="mt-5 font-bold text-red-700">
+              Your concern is under MUBER review.
+            </p>
+          )}
+        </section>
       )}
       {Boolean(quotes?.length) && (
         <section className="card mt-8">

@@ -8,7 +8,11 @@ const routes = [
   "customer/page.tsx",
   "provider/page.tsx",
   "crew/page.tsx",
+  "crew/invite/[id]/page.tsx",
+  "crew/completion/[assignment]/page.tsx",
+  "crew/completion/[assignment]/evidence/page.tsx",
   "dispatch/page.tsx",
+  "dispatch/completions/page.tsx",
   "admin/page.tsx",
 ];
 describe("route smoke checks", () => {
