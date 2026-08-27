@@ -34,4 +34,17 @@ describe("portal separation", () => {
       expect(source).toContain(role);
     expect(source).toContain('redirect("/auth/login?next=/portal")');
   });
+
+  it("keeps contractor profile updates server-derived and audited", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0027_contractor_company_profile.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("om.profile_id=auth.uid()");
+    expect(migration).toContain("provider.profile_updated");
+    expect(migration).not.toContain("p_company");
+  });
 });

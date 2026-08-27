@@ -32,6 +32,11 @@ export const portalMenus = {
       href: "/provider/dashboard",
       icon: BriefcaseBusiness,
     },
+    {
+      label: "Company profile",
+      href: "/provider/profile",
+      icon: BriefcaseBusiness,
+    },
     { label: "Job offers", href: "/provider/offers", icon: ClipboardList },
     { label: "Scheduled jobs", href: "/provider/jobs", icon: LayoutDashboard },
     { label: "Vehicles & crews", href: "/provider/fleet", icon: Truck },

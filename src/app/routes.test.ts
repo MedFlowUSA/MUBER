@@ -7,6 +7,7 @@ const routes = [
   "book/remove/page.tsx",
   "customer/page.tsx",
   "provider/page.tsx",
+  "provider/profile/page.tsx",
   "crew/page.tsx",
   "crew/invite/[id]/page.tsx",
   "crew/completion/[assignment]/page.tsx",
