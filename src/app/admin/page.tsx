@@ -28,7 +28,7 @@ export default async function Page() {
             href="/admin/providers"
             className="inline-flex rounded-xl bg-orange-600 px-5 py-3 font-bold text-white"
           >
-            Review provider applications
+            Review contractor applications
           </Link>
           <Link
             href="/admin/credentials"
@@ -41,6 +41,12 @@ export default async function Page() {
             className="inline-flex rounded-xl border border-navy px-5 py-3 font-bold text-navy"
           >
             Review support requests
+          </Link>
+          <Link
+            href="/dispatch/incidents"
+            className="inline-flex rounded-xl border border-red-500 px-5 py-3 font-bold text-red-700"
+          >
+            Review incidents
           </Link>
         </div>
       )}

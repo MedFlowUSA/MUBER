@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 function safeNext(value: FormDataEntryValue | null) {
-  const path = typeof value === "string" ? value : "/customer";
-  return path.startsWith("/") && !path.startsWith("//") ? path : "/customer";
+  const path = typeof value === "string" && value ? value : "/portal";
+  return path.startsWith("/") && !path.startsWith("//") ? path : "/portal";
 }
 export async function login(form: FormData) {
   const supabase = await createSupabaseServerClient();
@@ -71,5 +71,5 @@ export async function resetPassword(form: FormData) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.updateUser({ password });
   if (error) redirect("/auth/reset?error=Unable%20to%20update%20password");
-  redirect("/customer");
+  redirect("/portal");
 }

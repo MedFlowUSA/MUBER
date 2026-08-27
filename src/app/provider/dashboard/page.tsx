@@ -13,8 +13,8 @@ export default async function Page() {
     .in("status", ["sent", "viewed"]);
   return (
     <RoleShell role="provider">
-      <p className="eyebrow">Provider company portal</p>
-      <h1 className="mt-2 mb-8 text-4xl font-black">Company readiness</h1>
+      <p className="eyebrow">Contractor company portal</p>
+      <h1 className="mt-2 mb-8 text-4xl font-black">Contractor operations</h1>
       <div className="grid gap-5 lg:grid-cols-2">
         <EmptyState
           title={`${pendingOffers || 0} pending offer${pendingOffers === 1 ? "" : "s"}`}

@@ -9,7 +9,7 @@ export default async function Page({
   return (
     <AuthForm
       title="Welcome back"
-      copy="Sign in to submit requests and view your jobs."
+      copy="Sign in to your Customer, Contractor, Crew, Dispatch, or Admin portal."
       action={login}
       kind="login"
       error={p.error}

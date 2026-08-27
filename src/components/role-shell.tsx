@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Bell, LockKeyhole } from "lucide-react";
 import { Logo } from "./logo";
-import { roleRoutes } from "@/lib/routes";
-type RoleKey = keyof typeof roleRoutes;
+import { portalMenus } from "@/lib/routes";
+type RoleKey = keyof typeof portalMenus;
 export function RoleShell({
   role,
   children,
@@ -35,13 +35,13 @@ export function RoleShell({
             className="flex gap-2 overflow-auto lg:flex-col"
             aria-label="Role areas"
           >
-            {Object.entries(roleRoutes).map(([key, item]) => {
+            {portalMenus[role].map((item) => {
               const Icon = item.icon;
               return (
                 <Link
-                  key={key}
+                  key={item.href}
                   href={item.href}
-                  className={`flex shrink-0 items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold ${key === role ? "bg-navy text-white" : "bg-white text-slate hover:text-navy"}`}
+                  className="flex shrink-0 items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate hover:bg-navy hover:text-white"
                 >
                   <Icon size={18} />
                   {item.label}
@@ -51,10 +51,8 @@ export function RoleShell({
           </nav>
           <div className="mt-6 hidden rounded-2xl bg-orange/10 p-4 text-xs leading-5 text-slate lg:block">
             <LockKeyhole className="mb-2 text-orange" size={18} />
-            <strong className="text-navy">
-              Authentication-ready preview.
-            </strong>{" "}
-            Supabase Auth and RLS are required before private data is enabled.
+            <strong className="text-navy">Protected portal.</strong> Access is
+            filtered by authenticated role and database policies.
           </div>
         </aside>
         <main>{children}</main>
