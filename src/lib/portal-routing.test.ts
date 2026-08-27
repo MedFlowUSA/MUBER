@@ -245,4 +245,22 @@ describe("portal separation", () => {
     expect(migration).toContain("provider_assignments_page_idx");
     expect(migration).toContain("notifications_page_idx");
   });
+  it("enforces audited role-filtered job conversations", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0041_audited_job_conversations.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("public.can_read_job_message");
+    expect(migration).toContain("public.provider_has_assigned_job(p_job)");
+    expect(migration).toContain("public.crew_has_assigned_job(p_job)");
+    expect(migration).toContain("'job_message.sent'");
+    expect(migration).toContain("immutable_job_messages");
+    expect(migration).toContain("message rate limit reached");
+    expect(migration).toContain(
+      "revoke insert,update,delete on public.job_messages",
+    );
+  });
 });

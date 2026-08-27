@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   MessageSquareWarning,
+  MessagesSquare,
   PackageSearch,
   Truck,
   Users,
@@ -24,6 +25,7 @@ export const portalMenus = {
     { label: "Book Move It", href: "/book/move", icon: Truck },
     { label: "Book Remove It", href: "/book/remove", icon: PackageSearch },
     { label: "Notifications", href: "/notifications", icon: Bell },
+    { label: "Messages", href: "/messages", icon: MessagesSquare },
     { label: "Support", href: "/support", icon: LifeBuoy },
   ],
   provider: [
@@ -47,11 +49,13 @@ export const portalMenus = {
     { label: "Vehicles & crews", href: "/provider/fleet", icon: Truck },
     { label: "Credentials", href: "/provider/credentials", icon: BadgeCheck },
     { label: "Notifications", href: "/notifications", icon: Bell },
+    { label: "Messages", href: "/messages", icon: MessagesSquare },
     { label: "Support", href: "/support", icon: LifeBuoy },
   ],
   crew: [
     { label: "Crew assignments", href: "/crew", icon: Users },
     { label: "Notifications", href: "/notifications", icon: Bell },
+    { label: "Messages", href: "/messages", icon: MessagesSquare },
     { label: "Support", href: "/support", icon: LifeBuoy },
   ],
   dispatch: [
@@ -67,9 +71,11 @@ export const portalMenus = {
       icon: MessageSquareWarning,
     },
     { label: "Notifications", href: "/notifications", icon: Bell },
+    { label: "Messages", href: "/messages", icon: MessagesSquare },
   ],
   admin: [
     { label: "Admin home", href: "/admin", icon: LifeBuoy },
     { label: "Notifications", href: "/notifications", icon: Bell },
+    { label: "Messages", href: "/messages", icon: MessagesSquare },
   ],
 } as const;

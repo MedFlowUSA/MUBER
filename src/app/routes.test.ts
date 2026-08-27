@@ -17,6 +17,7 @@ const routes = [
   "dispatch/completions/page.tsx",
   "dispatch/incidents/page.tsx",
   "notifications/page.tsx",
+  "messages/page.tsx",
   "portal/page.tsx",
   "admin/page.tsx",
   "admin/audit/page.tsx",
