@@ -263,4 +263,25 @@ describe("portal separation", () => {
       "revoke insert,update,delete on public.job_messages",
     );
   });
+  it("keeps conversation attachments private and signature validated", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0042_private_conversation_attachments.sql",
+      ),
+      "utf8",
+    );
+    const route = fs.readFileSync(
+      path.join(process.cwd(), "src/app/api/conversation-attachments/route.ts"),
+      "utf8",
+    );
+    expect(migration).toContain(
+      "public.can_read_job_message(m.job_id,m.channel)",
+    );
+    expect(migration).toContain("immutable_job_message_attachments");
+    expect(migration).toContain("public=false");
+    expect(route).toContain("%PDF-");
+    expect(route).toContain("file.size > 10485760");
+    expect(route).not.toContain("service_role");
+  });
 });

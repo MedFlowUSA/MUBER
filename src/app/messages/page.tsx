@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { RoleShell } from "@/components/role-shell";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sendJobMessage } from "./actions";
+import { ConversationAttachmentUpload } from "@/components/conversation-attachment-upload";
 
 type PortalRole = "customer" | "provider" | "crew" | "dispatch" | "admin";
 type MessageJob = {
@@ -20,6 +21,12 @@ type Message = {
   sender_name: string;
   sender_role: string;
   created_at: string;
+};
+type Attachment = {
+  id: string;
+  message_id: string;
+  mime_type: string;
+  byte_size: number;
 };
 const shellFor = (role: string): PortalRole =>
   role === "customer"
@@ -53,12 +60,20 @@ export default async function MessagesPage({
   const available = (jobs || []) as MessageJob[];
   const selected =
     available.find((item) => item.job_id === query.job) || available[0];
-  const { data: messages, error } = selected
-    ? await supabase.rpc("get_job_messages", {
-        p_job: selected.job_id,
-        p_limit: 200,
-      })
-    : { data: [], error: null };
+  const [messageResult, attachmentResult] = selected
+    ? await Promise.all([
+        supabase.rpc("get_job_messages", {
+          p_job: selected.job_id,
+          p_limit: 200,
+        }),
+        supabase.rpc("get_job_message_attachments", { p_job: selected.job_id }),
+      ])
+    : [
+        { data: [], error: null },
+        { data: [], error: null },
+      ];
+  const { data: messages, error } = messageResult;
+  const attachments = (attachmentResult.data || []) as Attachment[];
   const role = String(profile.role);
   const operational = ["dispatcher", "super_admin"].includes(role);
   const channel =
@@ -128,6 +143,21 @@ export default async function MessagesPage({
                     <span>{message.channel.replaceAll("_", " ")}</span>
                   </div>
                   <p className="mt-2 whitespace-pre-wrap">{message.body}</p>
+                  {attachments
+                    .filter((item) => item.message_id === message.id)
+                    .map((item) => (
+                      <a
+                        key={item.id}
+                        href={`/api/conversation-attachments/${item.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 block rounded-xl border bg-white px-3 py-2 text-sm font-bold"
+                      >
+                        View private{" "}
+                        {item.mime_type === "application/pdf" ? "PDF" : "image"}{" "}
+                        · {(item.byte_size / 1048576).toFixed(1)} MB
+                      </a>
+                    ))}
                   <time className="mt-2 block text-xs text-slate">
                     {new Date(message.created_at).toLocaleString()}
                   </time>
@@ -170,6 +200,11 @@ export default async function MessagesPage({
               />
               <button className="btn-primary">Send message</button>
             </form>
+            <ConversationAttachmentUpload
+              job={selected.job_id}
+              channel={channel}
+              operational={operational}
+            />
           </section>
         )}
       </div>
