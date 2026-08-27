@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
+import { ASSIGNMENT_STATUSES, parseProviderWorkQuery } from "@/lib/queue-query";
 import { scheduleAssignment } from "./actions";
 type AssignmentCard = {
   id: string;
@@ -18,27 +19,43 @@ type AssignmentCard = {
 export default async function ProviderJobs({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; scheduled?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    scheduled?: string;
+    status?: string;
+    page?: string;
+  }>;
 }) {
   const { supabase } = await requireOperationalRole(
     ["provider_owner", "provider_manager"],
     "/provider/jobs",
   );
   const query = await searchParams;
-  const [{ data: assignments }, { data: vehicles }, { data: crews }] =
+  const filters = parseProviderWorkQuery(query, "assignment");
+  let assignmentQuery = supabase
+    .from("assignments")
+    .select(
+      "id,status,scheduled_start,scheduled_end,crew_id,vehicle_id,jobs(service,description,preferred_start)",
+      { count: "exact" },
+    );
+  if (filters.status)
+    assignmentQuery = assignmentQuery.eq("status", filters.status);
+  const start = (filters.page - 1) * filters.pageSize;
+  const [{ data: assignments, count }, { data: vehicles }, { data: crews }] =
     await Promise.all([
-      supabase
-        .from("assignments")
-        .select(
-          "id,status,scheduled_start,scheduled_end,crew_id,vehicle_id,jobs(service,description,preferred_start)",
-        )
-        .order("created_at", { ascending: false }),
+      assignmentQuery
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(start, start + filters.pageSize - 1),
       supabase
         .from("vehicles")
         .select("id,label,vehicle_type")
         .eq("active", true),
       supabase.from("crews").select("id,name,crew_size").eq("active", true),
     ]);
+  const pages = Math.max(1, Math.ceil((count || 0) / filters.pageSize));
+  const href = (page: number) =>
+    `/provider/jobs?status=${encodeURIComponent(filters.status)}&page=${page}`;
   return (
     <RoleShell role="provider">
       <Link
@@ -63,6 +80,19 @@ export default async function ProviderJobs({
           Assignment schedule saved and audited.
         </p>
       )}
+      <form className="mt-6 grid gap-3 rounded-2xl border bg-white p-4 sm:grid-cols-[1fr_auto]">
+        <select
+          name="status"
+          defaultValue={filters.status}
+          className="rounded-xl border p-3"
+        >
+          <option value="">All statuses</option>
+          {ASSIGNMENT_STATUSES.map((status) => (
+            <option key={status}>{status.replaceAll("_", " ")}</option>
+          ))}
+        </select>
+        <button className="btn-primary">Apply filter</button>
+      </form>
       <div className="mt-8 grid gap-5">
         {((assignments || []) as unknown as AssignmentCard[]).map((a) => (
           <article key={a.id} className="rounded-2xl border bg-white p-6">
@@ -75,9 +105,9 @@ export default async function ProviderJobs({
             {a.scheduled_start && (
               <p className="mt-4 rounded-xl bg-warm p-3 font-bold">
                 Scheduled {new Date(a.scheduled_start).toLocaleString()}–
-                  {a.scheduled_end
-                    ? new Date(a.scheduled_end).toLocaleString()
-                    : "end pending"}
+                {a.scheduled_end
+                  ? new Date(a.scheduled_end).toLocaleString()
+                  : "end pending"}
               </p>
             )}
             {["accepted", "crew_assigned"].includes(a.status) && (
@@ -142,6 +172,23 @@ export default async function ProviderJobs({
             No accepted assignments yet.
           </p>
         )}
+      </div>
+      <div className="mt-5 flex items-center justify-between">
+        <Link
+          href={href(Math.max(1, filters.page - 1))}
+          className={`btn-ghost ${filters.page <= 1 ? "pointer-events-none opacity-50" : ""}`}
+        >
+          Previous
+        </Link>
+        <span className="text-sm font-bold">
+          Page {filters.page} of {pages} · {count || 0}
+        </span>
+        <Link
+          href={href(Math.min(pages, filters.page + 1))}
+          className={`btn-ghost ${filters.page >= pages ? "pointer-events-none opacity-50" : ""}`}
+        >
+          Next
+        </Link>
       </div>
     </RoleShell>
   );

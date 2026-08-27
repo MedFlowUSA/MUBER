@@ -233,4 +233,16 @@ describe("portal separation", () => {
     expect(migration).toContain("count(*) over()");
     expect(migration).not.toContain("returns table(id uuid,metadata");
   });
+  it("indexes provider work and recipient-scoped notification pages", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0040_provider_notification_queue_pagination.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("provider_offers_page_idx");
+    expect(migration).toContain("provider_assignments_page_idx");
+    expect(migration).toContain("notifications_page_idx");
+  });
 });

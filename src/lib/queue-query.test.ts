@@ -4,6 +4,8 @@ import {
   parseComplianceQueueQuery,
   parseIncidentQueueQuery,
   parseProviderQueueQuery,
+  parseProviderWorkQuery,
+  parseNotificationQuery,
   parseQueueQuery,
 } from "./queue-query";
 describe("queue query validation", () => {
@@ -47,5 +49,15 @@ describe("queue query validation", () => {
     expect(
       parseAuditQueueQuery({ action: "provider.", entity: "provider_company" }),
     ).toMatchObject({ action: "provider.", entity: "provider_company" });
+  });
+  it("bounds provider work and notification queues", () => {
+    expect(
+      parseProviderWorkQuery({ status: "accepted", page: "2" }, "assignment"),
+    ).toMatchObject({ status: "accepted", page: 2 });
+    expect(parseNotificationQuery({ view: "unexpected", page: "0" })).toEqual({
+      view: "all",
+      page: 1,
+      pageSize: 25,
+    });
   });
 });

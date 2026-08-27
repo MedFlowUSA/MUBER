@@ -2,18 +2,34 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { markRead } from "./actions";
+import { parseNotificationQuery } from "@/lib/queue-query";
 
-export default async function NotificationsPage() {
+export default async function NotificationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string; page?: string }>;
+}) {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login?next=/notifications");
-  const { data: notifications } = await supabase
+  const filters = parseNotificationQuery(await searchParams);
+  let notificationQuery = supabase
     .from("in_app_notifications")
-    .select("id,event_key,route,safe_preview,read_at,created_at")
+    .select("id,event_key,route,safe_preview,read_at,created_at", {
+      count: "exact",
+    });
+  if (filters.view === "unread")
+    notificationQuery = notificationQuery.is("read_at", null);
+  const start = (filters.page - 1) * filters.pageSize;
+  const { data: notifications, count } = await notificationQuery
     .order("created_at", { ascending: false })
-    .limit(100);
+    .order("id", { ascending: false })
+    .range(start, start + filters.pageSize - 1);
+  const pages = Math.max(1, Math.ceil((count || 0) / filters.pageSize));
+  const href = (page: number) =>
+    `/notifications?view=${filters.view}&page=${page}`;
   return (
     <main className="min-h-screen bg-warm py-12">
       <div className="shell max-w-3xl">
@@ -22,6 +38,17 @@ export default async function NotificationsPage() {
         </Link>
         <p className="eyebrow mt-6">Account activity</p>
         <h1 className="mt-2 text-4xl font-black">Notifications</h1>
+        <form className="mt-6 flex gap-3 rounded-2xl border bg-white p-4">
+          <select
+            name="view"
+            defaultValue={filters.view}
+            className="min-h-12 flex-1 rounded-xl border p-3"
+          >
+            <option value="all">All notifications</option>
+            <option value="unread">Unread only</option>
+          </select>
+          <button className="btn-primary">Apply</button>
+        </form>
         <div className="mt-8 grid gap-3">
           {(notifications || []).map((item) => (
             <article
@@ -57,6 +84,23 @@ export default async function NotificationsPage() {
               No notifications yet.
             </p>
           )}
+        </div>
+        <div className="mt-5 flex items-center justify-between">
+          <Link
+            href={href(Math.max(1, filters.page - 1))}
+            className={`btn-ghost ${filters.page <= 1 ? "pointer-events-none opacity-50" : ""}`}
+          >
+            Previous
+          </Link>
+          <span className="text-sm font-bold">
+            Page {filters.page} of {pages} · {count || 0}
+          </span>
+          <Link
+            href={href(Math.min(pages, filters.page + 1))}
+            className={`btn-ghost ${filters.page >= pages ? "pointer-events-none opacity-50" : ""}`}
+          >
+            Next
+          </Link>
         </div>
       </div>
     </main>

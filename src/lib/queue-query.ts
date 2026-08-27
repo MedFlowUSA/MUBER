@@ -195,3 +195,49 @@ export function parseAuditQueueQuery(input: {
     pageSize: 25,
   };
 }
+export const OFFER_STATUSES = [
+  "draft",
+  "sent",
+  "viewed",
+  "accepted",
+  "declined",
+  "expired",
+  "withdrawn",
+  "superseded",
+] as const;
+export const ASSIGNMENT_STATUSES = [
+  "offered",
+  "pending_provider_acceptance",
+  "accepted",
+  "crew_assigned",
+  "crew_confirmed",
+  "ready",
+  "en_route",
+  "arrived",
+  "in_progress",
+  "completion_review",
+  "completed",
+  "reassignment_required",
+  "canceled",
+] as const;
+export function parseProviderWorkQuery(
+  input: { status?: string; page?: string },
+  kind: "offer" | "assignment",
+) {
+  const statuses = kind === "offer" ? OFFER_STATUSES : ASSIGNMENT_STATUSES;
+  return {
+    status: statuses.includes(input.status as never) ? input.status! : "",
+    page: boundedPage(input.page),
+    pageSize: 20,
+  };
+}
+export function parseNotificationQuery(input: {
+  view?: string;
+  page?: string;
+}) {
+  return {
+    view: input.view === "unread" ? "unread" : "all",
+    page: boundedPage(input.page),
+    pageSize: 25,
+  };
+}

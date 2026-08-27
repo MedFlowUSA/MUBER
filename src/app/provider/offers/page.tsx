@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
+import { OFFER_STATUSES, parseProviderWorkQuery } from "@/lib/queue-query";
 import { respondToOffer } from "./actions";
 type Props = {
   searchParams: Promise<{
     error?: string;
     accepted?: string;
     declined?: string;
+    status?: string;
+    page?: string;
   }>;
 };
 export default async function OffersPage({ searchParams }: Props) {
@@ -15,12 +18,22 @@ export default async function OffersPage({ searchParams }: Props) {
     "/provider/offers",
   );
   const query = await searchParams;
-  const { data: offers } = await supabase
+  const filters = parseProviderWorkQuery(query, "offer");
+  let offerQuery = supabase
     .from("provider_offers")
     .select(
       "id,job_id,approximate_pickup_area,approximate_destination_area,scope,required_vehicle,required_crew_size,estimated_duration_minutes,compensation_cents,currency,expires_at,status,decline_reason,created_at",
-    )
-    .order("created_at", { ascending: false });
+      { count: "exact" },
+    );
+  if (filters.status) offerQuery = offerQuery.eq("status", filters.status);
+  const start = (filters.page - 1) * filters.pageSize;
+  const { data: offers, count } = await offerQuery
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(start, start + filters.pageSize - 1);
+  const pages = Math.max(1, Math.ceil((count || 0) / filters.pageSize));
+  const href = (page: number) =>
+    `/provider/offers?status=${encodeURIComponent(filters.status)}&page=${page}`;
   return (
     <RoleShell role="provider">
       <Link
@@ -45,6 +58,19 @@ export default async function OffersPage({ searchParams }: Props) {
           Your response was recorded and audited.
         </p>
       )}
+      <form className="mt-6 grid gap-3 rounded-2xl border bg-white p-4 sm:grid-cols-[1fr_auto]">
+        <select
+          name="status"
+          defaultValue={filters.status}
+          className="rounded-xl border p-3"
+        >
+          <option value="">All statuses</option>
+          {OFFER_STATUSES.map((status) => (
+            <option key={status}>{status}</option>
+          ))}
+        </select>
+        <button className="btn-primary">Apply filter</button>
+      </form>
       <div className="mt-8 grid gap-4">
         {(offers || []).map((offer) => (
           <article key={offer.id} className="rounded-2xl border bg-white p-6">
@@ -144,6 +170,23 @@ export default async function OffersPage({ searchParams }: Props) {
             No offers are available for your company.
           </p>
         )}
+      </div>
+      <div className="mt-5 flex items-center justify-between">
+        <Link
+          href={href(Math.max(1, filters.page - 1))}
+          className={`btn-ghost ${filters.page <= 1 ? "pointer-events-none opacity-50" : ""}`}
+        >
+          Previous
+        </Link>
+        <span className="text-sm font-bold">
+          Page {filters.page} of {pages} · {count || 0}
+        </span>
+        <Link
+          href={href(Math.min(pages, filters.page + 1))}
+          className={`btn-ghost ${filters.page >= pages ? "pointer-events-none opacity-50" : ""}`}
+        >
+          Next
+        </Link>
       </div>
     </RoleShell>
   );
