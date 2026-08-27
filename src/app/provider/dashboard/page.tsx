@@ -27,6 +27,12 @@ export default async function Page() {
       >
         Manage credentials
       </Link>
+      <Link
+        href="/provider/fleet"
+        className="mt-6 ml-3 inline-flex rounded-xl border border-orange-600 px-5 py-3 font-bold text-orange-700"
+      >
+        Manage vehicles and crews
+      </Link>
     </RoleShell>
   );
 }

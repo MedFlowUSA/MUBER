@@ -1,0 +1,70 @@
+"use server";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { requireOperationalRole } from "@/lib/authorization";
+const csv = (v: FormDataEntryValue | null) =>
+  String(v || "")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+export async function createVehicle(form: FormData) {
+  const { supabase } = await requireOperationalRole(
+    ["provider_owner", "provider_manager"],
+    "/provider/fleet",
+  );
+  const { error } = await supabase.rpc("create_provider_vehicle", {
+    p_data: {
+      label: String(form.get("label") || ""),
+      vehicle_type: String(form.get("vehicle_type") || ""),
+      make: String(form.get("make") || ""),
+      model: String(form.get("model") || ""),
+      model_year: String(form.get("model_year") || ""),
+      plate_metadata: String(form.get("plate_metadata") || ""),
+      capacity_class: String(form.get("capacity_class") || ""),
+      cargo_dimensions: String(form.get("cargo_dimensions") || ""),
+      weight_capability: String(form.get("weight_capability") || ""),
+      lift_gate: form.get("lift_gate") === "on",
+      ramp: form.get("ramp") === "on",
+      enclosed: form.get("enclosed") === "on",
+      service_categories: form.getAll("service_categories").map(String),
+      internal_notes: String(form.get("internal_notes") || ""),
+    },
+  });
+  if (error)
+    redirect(`/provider/fleet?error=${encodeURIComponent(error.message)}`);
+  revalidatePath("/provider/fleet");
+  redirect("/provider/fleet?vehicle=1");
+}
+export async function createCrew(form: FormData) {
+  const { supabase } = await requireOperationalRole(
+    ["provider_owner", "provider_manager"],
+    "/provider/fleet",
+  );
+  const { error } = await supabase.rpc("create_provider_crew", {
+    p_name: String(form.get("name") || ""),
+    p_size: Number(form.get("crew_size") || 1),
+    p_capabilities: csv(form.get("capabilities")),
+    p_heavy: form.get("heavy") === "on",
+    p_moving: form.get("moving") === "on",
+    p_removal: form.get("removal") === "on",
+  });
+  if (error)
+    redirect(`/provider/fleet?error=${encodeURIComponent(error.message)}`);
+  revalidatePath("/provider/fleet");
+  redirect("/provider/fleet?crew=1");
+}
+export async function inviteCrewMember(form: FormData) {
+  const { supabase } = await requireOperationalRole(
+    ["provider_owner"],
+    "/provider/fleet",
+  );
+  const { error } = await supabase.rpc("create_crew_invitation", {
+    p_crew: String(form.get("crew") || ""),
+    p_email: String(form.get("email") || ""),
+    p_role: String(form.get("role") || "crew_member"),
+  });
+  if (error)
+    redirect(`/provider/fleet?error=${encodeURIComponent(error.message)}`);
+  revalidatePath("/provider/fleet");
+  redirect("/provider/fleet?invited=1");
+}
