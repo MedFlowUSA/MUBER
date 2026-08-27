@@ -18,7 +18,7 @@ export default async function IncidentQueue({
   const { data: incidents } = await supabase
     .from("incidents")
     .select(
-      "id,job_id,category,reported_severity,internal_severity,status,reported_at,description,injury_indicator,emergency_services_indicator,damage_indicator,missing_item_indicator,hazard_indicator,jobs(reference,status),incident_evidence(id,evidence_type,description,created_at)",
+      "id,job_id,category,reported_severity,status,reported_at,description,injury_indicator,emergency_services_indicator,damage_indicator,missing_item_indicator,hazard_indicator,jobs(reference,status),incident_evidence(id,evidence_type,description,created_at)",
     )
     .order("reported_at", { ascending: false });
   const { data: completed } =
@@ -68,6 +68,12 @@ export default async function IncidentQueue({
               </span>
             </div>
             <p className="mt-4 whitespace-pre-wrap">{item.description}</p>
+            <Link
+              href={`/incidents/${item.id}`}
+              className="mt-4 inline-flex rounded-xl bg-navy px-4 py-2 text-sm font-bold text-white"
+            >
+              Open incident detail
+            </Link>
             <p className="mt-3 text-sm font-bold text-red-700">
               Reported severity: {item.reported_severity}. Flags:{" "}
               {[

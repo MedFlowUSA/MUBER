@@ -186,4 +186,23 @@ describe("portal separation", () => {
     expect(migration).not.toContain("delete from public.provider_companies");
     expect(migration).not.toContain("delete from public.assignments");
   });
+
+  it("filters incident and claim detail fields by role at the database", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0037_role_filtered_incident_claim_details.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("revoke select on public.incidents");
+    expect(migration).toContain("revoke select on public.claims");
+    expect(migration).toContain("get_incident_detail");
+    expect(migration).toContain("get_claim_detail");
+    expect(migration).toContain(
+      "case when v_internal then v_i.internal_notes end",
+    );
+    expect(migration).toContain("'liability_admitted',false");
+    expect(migration).toContain("'payment_processed',false");
+  });
 });

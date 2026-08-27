@@ -484,6 +484,12 @@ export default async function Page({
                   {incident.customer_visible_summary ||
                     "Awaiting MUBER review."}
                 </p>
+                <Link
+                  href={`/incidents/${incident.id}`}
+                  className="mt-3 inline-flex rounded-xl border px-3 py-2 text-sm font-bold"
+                >
+                  View incident timeline
+                </Link>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {incident.incident_evidence?.map((evidence) => (
                     <a
