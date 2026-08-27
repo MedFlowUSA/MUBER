@@ -284,4 +284,18 @@ describe("portal separation", () => {
     expect(route).toContain("file.size > 10485760");
     expect(route).not.toContain("service_role");
   });
+  it("tracks authorized conversation reads and bounded pages", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0043_conversation_read_state_pagination.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("get_message_jobs_page");
+    expect(migration).toContain("mark_job_conversation_read");
+    expect(migration).toContain("public.can_read_job_message");
+    expect(migration).toContain("limit least(greatest");
+    expect(migration).toContain("profile_id=auth.uid()");
+  });
 });

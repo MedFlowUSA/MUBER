@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { RoleShell } from "@/components/role-shell";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { sendJobMessage } from "./actions";
+import { markConversationRead, sendJobMessage } from "./actions";
 import { ConversationAttachmentUpload } from "@/components/conversation-attachment-upload";
+import { parseConversationQuery } from "@/lib/queue-query";
 
 type PortalRole = "customer" | "provider" | "crew" | "dispatch" | "admin";
 type MessageJob = {
@@ -12,6 +13,9 @@ type MessageJob = {
   service: string;
   status: string;
   last_message_at: string | null;
+  last_preview: string | null;
+  unread_count: number;
+  total_count: number;
 };
 type Message = {
   id: string;
@@ -42,9 +46,16 @@ const shellFor = (role: string): PortalRole =>
 export default async function MessagesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ job?: string; error?: string; sent?: string }>;
+  searchParams: Promise<{
+    job?: string;
+    error?: string;
+    sent?: string;
+    view?: string;
+    page?: string;
+  }>;
 }) {
   const query = await searchParams;
+  const filters = parseConversationQuery(query);
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -56,8 +67,16 @@ export default async function MessagesPage({
     .eq("id", user.id)
     .single();
   if (!profile) redirect("/auth/login");
-  const { data: jobs } = await supabase.rpc("get_message_jobs");
+  const { data: jobs } = await supabase.rpc("get_message_jobs_page", {
+    p_page: filters.page,
+    p_page_size: filters.pageSize,
+    p_unread_only: filters.view === "unread",
+  });
   const available = (jobs || []) as MessageJob[];
+  const pages = Math.max(
+    1,
+    Math.ceil(Number(available[0]?.total_count || 0) / filters.pageSize),
+  );
   const selected =
     available.find((item) => item.job_id === query.job) || available[0];
   const [messageResult, attachmentResult] = selected
@@ -90,6 +109,17 @@ export default async function MessagesPage({
         Messages are job-scoped, role-filtered, and retained in the operational
         audit trail.
       </p>
+      <form className="mt-6 flex gap-3 rounded-2xl border bg-white p-4">
+        <select
+          name="view"
+          defaultValue={filters.view}
+          className="min-h-12 flex-1 rounded-xl border p-3"
+        >
+          <option value="all">All conversations</option>
+          <option value="unread">Unread only</option>
+        </select>
+        <button className="btn-primary">Apply</button>
+      </form>
       {(query.error || error) && (
         <p className="mt-5 rounded-xl bg-red-50 p-4 text-red-800">
           {query.error || error?.message}
@@ -112,6 +142,11 @@ export default async function MessagesPage({
               className={`rounded-2xl border p-4 ${selected?.job_id === item.job_id ? "bg-navy text-white" : "bg-white"}`}
             >
               <strong>{item.reference}</strong>
+              {Number(item.unread_count) > 0 && (
+                <span className="ml-2 rounded-full bg-orange px-2 py-1 text-xs font-black text-white">
+                  {item.unread_count} unread
+                </span>
+              )}
               <span className="mt-1 block text-xs uppercase">
                 {item.service} · {item.status.replaceAll("_", " ")}
               </span>
@@ -127,6 +162,14 @@ export default async function MessagesPage({
           <section className="rounded-2xl border bg-white p-5">
             <div className="flex flex-wrap justify-between gap-2 border-b pb-4">
               <h2 className="text-xl font-black">{selected.reference}</h2>
+              {Number(selected.unread_count) > 0 && (
+                <form action={markConversationRead}>
+                  <input type="hidden" name="job" value={selected.job_id} />
+                  <button className="rounded-xl border px-3 py-2 text-sm font-bold">
+                    Mark read
+                  </button>
+                </form>
+              )}
               <span className="text-xs font-bold uppercase">
                 {selected.status.replaceAll("_", " ")}
               </span>
@@ -207,6 +250,23 @@ export default async function MessagesPage({
             />
           </section>
         )}
+      </div>
+      <div className="mt-5 flex items-center justify-between">
+        <Link
+          className={`btn-ghost ${filters.page <= 1 ? "pointer-events-none opacity-50" : ""}`}
+          href={`/messages?view=${filters.view}&page=${Math.max(1, filters.page - 1)}`}
+        >
+          Previous
+        </Link>
+        <span className="text-sm font-bold">
+          Page {filters.page} of {pages}
+        </span>
+        <Link
+          className={`btn-ghost ${filters.page >= pages ? "pointer-events-none opacity-50" : ""}`}
+          href={`/messages?view=${filters.view}&page=${Math.min(pages, filters.page + 1)}`}
+        >
+          Next
+        </Link>
       </div>
     </RoleShell>
   );

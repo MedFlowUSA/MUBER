@@ -23,3 +23,12 @@ export async function sendJobMessage(form: FormData) {
   revalidatePath("/messages");
   redirect(`/messages?job=${job}&sent=1`);
 }
+
+export async function markConversationRead(form: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const job = String(form.get("job") || "");
+  if (/^[0-9a-f-]{36}$/i.test(job))
+    await supabase.rpc("mark_job_conversation_read", { p_job: job });
+  revalidatePath("/messages");
+  redirect(`/messages?job=${job}`);
+}

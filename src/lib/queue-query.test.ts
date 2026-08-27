@@ -6,6 +6,7 @@ import {
   parseProviderQueueQuery,
   parseProviderWorkQuery,
   parseNotificationQuery,
+  parseConversationQuery,
   parseQueueQuery,
 } from "./queue-query";
 describe("queue query validation", () => {
@@ -60,4 +61,10 @@ describe("queue query validation", () => {
       pageSize: 25,
     });
   });
+  it("bounds conversation queues", () =>
+    expect(parseConversationQuery({ view: "unread", page: "3" })).toEqual({
+      view: "unread",
+      page: 3,
+      pageSize: 20,
+    }));
 });
