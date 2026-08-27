@@ -1,0 +1,2 @@
+import { describe,expect,it } from "vitest"; import { hasSupabaseConfig,readPublicEnv } from "./env";
+describe("environment validation",()=>{it("allows an unconfigured local demo",()=>expect(hasSupabaseConfig({})).toBe(false));it("rejects a malformed URL",()=>expect(()=>readPublicEnv({NEXT_PUBLIC_SUPABASE_URL:"secret"})).toThrow());it("recognizes configured values",()=>expect(hasSupabaseConfig({NEXT_PUBLIC_SUPABASE_URL:"https://demo.supabase.co",NEXT_PUBLIC_SUPABASE_ANON_KEY:"public-anon"})).toBe(true))});

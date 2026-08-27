@@ -1,0 +1,1 @@
+import { LegalPage } from "@/components/legal-page"; export default function Page(){return <LegalPage title="Terms" copy="MUBER’s customer and provider terms are under development and will be reviewed before live bookings or payments are enabled."/>}

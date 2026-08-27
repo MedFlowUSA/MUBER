@@ -1,0 +1,2 @@
+import Link from "next/link"; import { SiteShell } from "./site-shell";
+export function LegalPage({title,copy}:{title:string;copy:string}){return <SiteShell><main className="shell min-h-[60vh] py-20"><p className="eyebrow">MUBER</p><h1 className="mt-3 text-5xl font-black">{title}</h1><p className="mt-6 max-w-2xl text-lg leading-8 text-slate">{copy}</p><Link href="/" className="btn-navy mt-10">Return home</Link></main></SiteShell>}
