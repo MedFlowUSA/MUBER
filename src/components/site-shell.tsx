@@ -58,8 +58,8 @@ export function Footer() {
         <div>
           <Logo compact />
           <p className="mt-5 max-w-md text-sm leading-6 text-white/70">
-            A managed marketplace for moving and junk removal in Redlands and
-            the Inland Empire.
+            Now serving Southern California, starting in Redlands and the Inland
+            Empire. Coming soon to communities nationwide.
           </p>
           <p className="mt-4 text-sm font-black tracking-[.14em]">
             MOVE IT. <span className="text-orange">REMOVE IT.</span>
@@ -75,7 +75,7 @@ export function Footer() {
             ["Providers", "/provider"],
             ["Support", "/support"],
             ["Customer", "/customer"],
-            ["Business partners", "/support"],
+            ["Business partners", "/business"],
           ].map(([a, b]) => (
             <Link key={a} href={b} className="hover:text-white">
               {a}

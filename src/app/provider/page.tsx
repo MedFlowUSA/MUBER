@@ -29,8 +29,9 @@ export default function Page() {
                 Do great local work. We’ll build the tools around it.
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-8 text-white/70">
-                MUBER is preparing a managed marketplace for qualified moving
-                and junk-removal companies across the Inland Empire.
+                Join a managed marketplace for qualified moving and junk-removal
+                companies serving Southern California, with nationwide expansion
+                ahead.
               </p>
               <Link href="/provider/apply" className="btn-primary mt-8">
                 Become a provider <ArrowRight size={18} />
@@ -54,19 +55,23 @@ export default function Page() {
                 Help shape the provider experience.
               </h2>
               <p className="mt-5 leading-7 text-slate">
-                The application workflow is not live yet. No jobs, income,
-                employment, or benefits are guaranteed. Qualified companies will
-                remain independent businesses.
+                Applications are open for qualified moving and junk-removal
+                companies. Applying does not guarantee approval, jobs, income,
+                employment, or benefits. Providers remain independent
+                businesses.
               </p>
             </div>
             <div className="rounded-3xl bg-warm p-7">
-              <h3 className="text-xl font-black">Intake coming soon</h3>
+              <h3 className="text-xl font-black">
+                Provider applications are open
+              </h3>
               <p className="mt-3 text-sm leading-6 text-slate">
-                Future onboarding will request company, licensing, insurance,
-                vehicle, service-area, and crew information.
+                Tell us about your company, credentials, service area, vehicles,
+                crews, and operating capabilities. Approval is reviewed by
+                MUBER.
               </p>
-              <Link href="/support" className="btn-navy mt-7">
-                Contact MUBER
+              <Link href="/provider/apply" className="btn-navy mt-7">
+                Start your application
               </Link>
             </div>
           </div>

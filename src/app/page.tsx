@@ -49,7 +49,7 @@ export default function Home() {
           <div className="absolute -right-32 -top-32 size-96 rounded-full bg-orange/15 blur-3xl" />
           <div className="shell relative grid items-center gap-12 lg:grid-cols-[1.1fr_.9fr]">
             <div className="animate-rise">
-              <p className="eyebrow">Redlands + the Inland Empire</p>
+              <p className="eyebrow">Now serving Southern California</p>
               <h1 className="mt-5 max-w-3xl text-5xl font-black leading-[.95] tracking-[-.05em] sm:text-7xl">
                 The simpler way to move what matters.
               </h1>
@@ -128,11 +128,12 @@ export default function Home() {
               <MapPin className="text-orange" />
               <p className="eyebrow mt-8">Our launch area</p>
               <h2 className="mt-3 text-4xl font-black">
-                Rooted in Redlands. Ready for the Inland Empire.
+                Southern California today. Nationwide tomorrow.
               </h2>
               <p className="mt-5 leading-7 text-white/70">
-                We’re starting local, with service availability confirmed for
-                each request. Submit your details to see how we can help.
+                We&apos;re launching from Redlands and the Inland Empire, then
+                expanding across Southern California and into communities
+                nationwide. Availability is confirmed for every request.
               </p>
               <Link className="btn-primary mt-8" href="/book/move">
                 Start a request <ArrowRight size={18} />
@@ -158,7 +159,7 @@ export default function Home() {
               icon={<Building2 />}
               title="Moving things for business?"
               copy="Talk with us about recurring removals, property turns, office moves, and future partner accounts."
-              href="/support"
+              href="/business"
               label="Explore business accounts"
               light
             />

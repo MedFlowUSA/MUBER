@@ -3,7 +3,7 @@ export default function Page() {
   return (
     <LegalPage
       title="Support"
-      copy="Support channels are being prepared for launch. For now, this page establishes the future customer, provider, and business-account support entry point."
+      copy="Get help with a customer request, provider application, account, or MUBER service. Dedicated support channels are expanding alongside our Southern California launch."
     />
   );
 }

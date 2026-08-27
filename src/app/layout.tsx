@@ -3,10 +3,10 @@ import "./globals.css";
 import { ToastProvider } from "@/components/toast";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://muber.example"),
+  metadataBase: new URL("https://muberapp.vercel.app"),
   title: { default: "MUBER | Move It. Remove It.", template: "%s | MUBER" },
   description:
-    "Book moving and junk removal with verified local professionals across Redlands and the Inland Empire.",
+    "A managed marketplace for moving and junk removal, now serving Southern California and expanding nationwide.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/brand/muber-app-icon.png",
