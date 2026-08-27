@@ -1,6 +1,7 @@
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
-import { confirmCrewAssignment } from "./actions";
+import { crewFieldActions } from "@/lib/job-status";
+import { advanceFieldWork, confirmCrewAssignment } from "./actions";
 type Stop = {
   stop_order: number;
   stop_type: string;
@@ -30,7 +31,11 @@ type CrewAssignment = {
 export default async function CrewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; confirmed?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    confirmed?: string;
+    advanced?: string;
+  }>;
 }) {
   const { supabase, profile } = await requireOperationalRole(
     ["crew_lead", "crew_member", "super_admin"],
@@ -56,9 +61,9 @@ export default async function CrewPage({
           {query.error}
         </p>
       )}
-      {query.confirmed && (
+      {(query.confirmed || query.advanced) && (
         <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-800">
-          Crew readiness confirmed and the customer timeline updated.
+          Field status recorded and the customer timeline updated.
         </p>
       )}
       <div className="mt-8 grid gap-5">
@@ -129,6 +134,18 @@ export default async function CrewPage({
                 <input type="hidden" name="assignment" value={a.id} />
                 <button className="rounded-xl bg-orange-600 px-5 py-3 font-bold text-white">
                   Confirm crew readiness
+                </button>
+              </form>
+            )}
+            {profile.role === "crew_lead" && crewFieldActions[a.status] && (
+              <form action={advanceFieldWork} className="mt-5">
+                <input type="hidden" name="assignment" value={a.id} />
+                <button
+                  name="command"
+                  value={crewFieldActions[a.status].command}
+                  className="rounded-xl bg-navy px-5 py-3 font-bold text-white"
+                >
+                  {crewFieldActions[a.status].label}
                 </button>
               </form>
             )}

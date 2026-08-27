@@ -37,6 +37,19 @@ export const customerStatus: Record<string, { label: string; next: string }> = {
     next: "Your assigned crew is confirmed.",
   },
   ready: { label: "Ready", next: "Your appointment is ready." },
+  en_route: {
+    label: "Crew en route",
+    next: "Your crew is traveling to the appointment. Live tracking is not available.",
+  },
+  arrived: { label: "Crew arrived", next: "Your crew has reported arrival." },
+  in_progress: {
+    label: "Work in progress",
+    next: "Your assigned crew is completing the work.",
+  },
+  completion_review: {
+    label: "Completion review",
+    next: "MUBER is reviewing the submitted completion details.",
+  },
   cancelled: {
     label: "Canceled",
     next: "Contact support if you have questions.",
@@ -51,6 +64,19 @@ export const statusForCustomer = (status: string) =>
     label: status.replaceAll("_", " "),
     next: "MUBER will provide the next update here.",
   };
+export const crewFieldActions: Record<
+  string,
+  { command: string; label: string }
+> = {
+  crew_confirmed: { command: "mark_ready", label: "Mark crew ready" },
+  ready: { command: "start_en_route", label: "Start en route" },
+  en_route: { command: "mark_arrived", label: "Report arrival" },
+  arrived: { command: "start_work", label: "Start work" },
+  in_progress: {
+    command: "request_completion_review",
+    label: "Submit for completion review",
+  },
+};
 export const dispatchCommands: Record<
   string,
   { label: string; command: string; reason?: boolean }[]
@@ -101,7 +127,6 @@ export const dispatchCommands: Record<
     },
   ],
   crew_confirmed: [
-    { label: "Mark ready", command: "mark_ready" },
     {
       label: "Require reassignment",
       command: "require_reassignment",
