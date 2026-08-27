@@ -7,6 +7,8 @@ import {
   createVehicle,
   inviteCrewMember,
   revokeCrewInvitation,
+  updateCrew,
+  updateVehicle,
 } from "./actions";
 type Props = {
   searchParams: Promise<{
@@ -36,7 +38,7 @@ export default async function FleetPage({ searchParams }: Props) {
       supabase
         .from("vehicles")
         .select(
-          "id,label,vehicle_type,make,model,capacity_class,active,insurance_eligible,service_categories",
+          "id,label,vehicle_type,make,model,model_year,plate_metadata,capacity_class,cargo_dimensions,weight_capability,lift_gate,ramp,enclosed,active,insurance_eligible,service_categories,internal_notes",
         )
         .order("created_at", { ascending: false }),
       supabase
@@ -251,6 +253,155 @@ export default async function FleetPage({ searchParams }: Props) {
                   Insurance eligibility:{" "}
                   {v.insurance_eligible ? "eligible" : "not yet eligible"}
                 </p>
+                <details className="mt-4 rounded-xl border p-3">
+                  <summary className="cursor-pointer font-bold">
+                    Edit vehicle
+                  </summary>
+                  <form
+                    action={updateVehicle}
+                    className="mt-4 grid gap-3 sm:grid-cols-2"
+                  >
+                    <input type="hidden" name="vehicle" value={v.id} />
+                    <input
+                      required
+                      name="label"
+                      defaultValue={v.label}
+                      aria-label="Vehicle name"
+                      className="rounded-xl border px-3 py-2"
+                    />
+                    <select
+                      required
+                      name="vehicle_type"
+                      defaultValue={v.vehicle_type}
+                      aria-label="Vehicle type"
+                      className="rounded-xl border px-3 py-2"
+                    >
+                      {[
+                        "pickup_truck",
+                        "cargo_van",
+                        "box_truck",
+                        "moving_truck",
+                        "trailer",
+                        "dump_trailer",
+                        "other",
+                      ].map((type) => (
+                        <option key={type} value={type}>
+                          {type.replaceAll("_", " ")}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      name="make"
+                      defaultValue={v.make || ""}
+                      placeholder="Make"
+                      className="rounded-xl border px-3 py-2"
+                    />
+                    <input
+                      name="model"
+                      defaultValue={v.model || ""}
+                      placeholder="Model"
+                      className="rounded-xl border px-3 py-2"
+                    />
+                    <input
+                      name="model_year"
+                      type="number"
+                      min="1900"
+                      max="2200"
+                      defaultValue={v.model_year || ""}
+                      placeholder="Year"
+                      className="rounded-xl border px-3 py-2"
+                    />
+                    <input
+                      name="plate_metadata"
+                      defaultValue={v.plate_metadata || ""}
+                      placeholder="Plate metadata"
+                      className="rounded-xl border px-3 py-2"
+                    />
+                    <input
+                      name="capacity_class"
+                      defaultValue={v.capacity_class || ""}
+                      placeholder="Capacity class"
+                      className="rounded-xl border px-3 py-2"
+                    />
+                    <input
+                      name="cargo_dimensions"
+                      defaultValue={v.cargo_dimensions || ""}
+                      placeholder="Cargo dimensions"
+                      className="rounded-xl border px-3 py-2"
+                    />
+                    <input
+                      name="weight_capability"
+                      defaultValue={v.weight_capability || ""}
+                      placeholder="Weight capability"
+                      className="rounded-xl border px-3 py-2"
+                    />
+                    <input
+                      name="internal_notes"
+                      defaultValue={v.internal_notes || ""}
+                      placeholder="Internal notes"
+                      className="rounded-xl border px-3 py-2"
+                    />
+                    <div className="flex flex-wrap gap-3 text-sm sm:col-span-2">
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="lift_gate"
+                          defaultChecked={v.lift_gate}
+                        />{" "}
+                        Lift gate
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="ramp"
+                          defaultChecked={v.ramp}
+                        />{" "}
+                        Ramp
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="enclosed"
+                          defaultChecked={Boolean(v.enclosed)}
+                        />{" "}
+                        Enclosed
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="active"
+                          defaultChecked={v.active}
+                        />{" "}
+                        Active
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="service_categories"
+                          value="move"
+                          defaultChecked={v.service_categories?.includes(
+                            "move",
+                          )}
+                        />{" "}
+                        Moving
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="service_categories"
+                          value="remove"
+                          defaultChecked={v.service_categories?.includes(
+                            "remove",
+                          )}
+                        />{" "}
+                        Removal
+                      </label>
+                    </div>
+                    <button className="rounded-xl bg-navy px-4 py-3 font-bold text-white sm:col-span-2">
+                      Save vehicle
+                    </button>
+                  </form>
+                </details>
               </article>
             ))}
             {!vehicles?.length && (
@@ -276,6 +427,74 @@ export default async function FleetPage({ searchParams }: Props) {
                     .filter(Boolean)
                     .join(", ") || "Capabilities pending"}
                 </p>
+                <details className="mt-4 rounded-xl border p-3">
+                  <summary className="cursor-pointer font-bold">
+                    Edit crew
+                  </summary>
+                  <form action={updateCrew} className="mt-4 grid gap-3">
+                    <input type="hidden" name="crew" value={c.id} />
+                    <input
+                      required
+                      name="name"
+                      defaultValue={c.name}
+                      aria-label="Crew name"
+                      className="rounded-xl border px-3 py-2"
+                    />
+                    <input
+                      required
+                      name="crew_size"
+                      type="number"
+                      min="1"
+                      max="20"
+                      defaultValue={c.crew_size}
+                      aria-label="Crew size"
+                      className="rounded-xl border px-3 py-2"
+                    />
+                    <input
+                      name="capabilities"
+                      defaultValue={(c.capabilities || []).join(", ")}
+                      placeholder="Capabilities, comma separated"
+                      className="rounded-xl border px-3 py-2"
+                    />
+                    <div className="flex flex-wrap gap-3 text-sm">
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="heavy"
+                          defaultChecked={c.heavy_item_capable}
+                        />{" "}
+                        Heavy items
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="moving"
+                          defaultChecked={c.moving_eligible}
+                        />{" "}
+                        Moving
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="removal"
+                          defaultChecked={c.removal_eligible}
+                        />{" "}
+                        Junk removal
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="active"
+                          defaultChecked={c.active}
+                        />{" "}
+                        Active
+                      </label>
+                    </div>
+                    <button className="rounded-xl bg-navy px-4 py-3 font-bold text-white">
+                      Save crew
+                    </button>
+                  </form>
+                </details>
                 {["provider_owner", "provider_manager"].includes(
                   profile.role,
                 ) && (

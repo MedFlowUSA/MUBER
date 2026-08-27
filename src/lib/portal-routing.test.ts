@@ -95,4 +95,61 @@ describe("portal separation", () => {
     expect(migration).toContain("job_information.responded");
     expect(migration).toContain("update public.jobs set status='needs_review'");
   });
+
+  it("validates canonical weekly operating hours in the database", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0032_validated_weekly_operating_hours.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("valid_weekly_operating_hours");
+    expect(migration).toContain("America/Los_Angeles");
+    const fix = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0034_fix_weekly_hours_key_validation.sql",
+      ),
+      "utf8",
+    );
+    expect(fix).toContain("jsonb_object_keys(p_hours->'days')");
+    expect(fix).not.toContain("jsonb_object_length");
+    expect(migration).toContain("v_start>=v_end");
+    expect(migration).toContain("v_start<v_previous_end");
+    expect(migration).toContain("validate_provider_operating_hours");
+  });
+
+  it("uses a friendly weekly-hours editor instead of raw JSON", () => {
+    const editor = fs.readFileSync(
+      path.join(process.cwd(), "src/components/weekly-hours-editor.tsx"),
+      "utf8",
+    );
+    const profile = fs.readFileSync(
+      path.join(process.cwd(), "src/app/provider/profile/page.tsx"),
+      "utf8",
+    );
+    expect(editor).toContain("Copy one day to others");
+    expect(editor).toContain('type="time"');
+    expect(editor).toContain("Pacific Time");
+    expect(profile).toContain("<WeeklyHoursEditor");
+    expect(profile).not.toContain("JSON operating hours");
+  });
+
+  it("keeps fleet editing provider-scoped, audited, and assignment-safe", () => {
+    const migration = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/0033_provider_fleet_editing.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain("public.can_manage_provider");
+    expect(migration).toContain("vehicle has an active assignment");
+    expect(migration).toContain("crew has an active assignment");
+    expect(migration).toContain("'vehicle.updated'");
+    expect(migration).toContain("'crew.updated'");
+    expect(migration).not.toContain("delete from public.vehicles");
+    expect(migration).not.toContain("delete from public.crews");
+  });
 });

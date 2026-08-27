@@ -1,6 +1,7 @@
 import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
 import { updateCompanyProfile } from "./actions";
+import { WeeklyHoursEditor } from "@/components/weekly-hours-editor";
 
 export default async function ContractorProfile({
   searchParams,
@@ -102,19 +103,7 @@ export default async function ContractorProfile({
             className="mt-1 min-h-24 w-full rounded-xl border p-3 font-normal"
           />
         </label>
-        <label className="font-bold md:col-span-2">
-          Operating hours (JSON)
-          <textarea
-            name="operating_hours"
-            required
-            defaultValue={JSON.stringify(
-              company.operating_hours || {},
-              null,
-              2,
-            )}
-            className="mt-1 min-h-36 w-full rounded-xl border p-3 font-mono text-sm font-normal"
-          />
-        </label>
+        <WeeklyHoursEditor initial={company.operating_hours} />
         <label className="flex gap-2 font-bold">
           <input
             name="available"

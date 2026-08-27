@@ -55,6 +55,60 @@ export async function createCrew(form: FormData) {
   revalidatePath("/provider/fleet");
   redirect("/provider/fleet?crew=1");
 }
+export async function updateVehicle(form: FormData) {
+  const { supabase } = await requireOperationalRole(
+    ["provider_owner", "provider_manager"],
+    "/provider/fleet",
+  );
+  const { error } = await supabase.rpc("update_provider_vehicle", {
+    p_vehicle: String(form.get("vehicle") || ""),
+    p_data: {
+      label: String(form.get("label") || ""),
+      vehicle_type: String(form.get("vehicle_type") || ""),
+      make: String(form.get("make") || ""),
+      model: String(form.get("model") || ""),
+      model_year: String(form.get("model_year") || ""),
+      plate_metadata: String(form.get("plate_metadata") || ""),
+      capacity_class: String(form.get("capacity_class") || ""),
+      cargo_dimensions: String(form.get("cargo_dimensions") || ""),
+      weight_capability: String(form.get("weight_capability") || ""),
+      lift_gate: form.get("lift_gate") === "on",
+      ramp: form.get("ramp") === "on",
+      enclosed: form.get("enclosed") === "on",
+      active: form.get("active") === "on",
+      service_categories: form.getAll("service_categories").map(String),
+      internal_notes: String(form.get("internal_notes") || ""),
+    },
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error)
+    redirect(`/provider/fleet?error=${encodeURIComponent(error.message)}`);
+  revalidatePath("/provider/fleet");
+  redirect("/provider/fleet?vehicle=updated");
+}
+export async function updateCrew(form: FormData) {
+  const { supabase } = await requireOperationalRole(
+    ["provider_owner", "provider_manager"],
+    "/provider/fleet",
+  );
+  const { error } = await supabase.rpc("update_provider_crew", {
+    p_crew: String(form.get("crew") || ""),
+    p_data: {
+      name: String(form.get("name") || ""),
+      crew_size: Number(form.get("crew_size") || 1),
+      capabilities: csv(form.get("capabilities")),
+      heavy: form.get("heavy") === "on",
+      moving: form.get("moving") === "on",
+      removal: form.get("removal") === "on",
+      active: form.get("active") === "on",
+    },
+    p_request_id: crypto.randomUUID(),
+  });
+  if (error)
+    redirect(`/provider/fleet?error=${encodeURIComponent(error.message)}`);
+  revalidatePath("/provider/fleet");
+  redirect("/provider/fleet?crew=updated");
+}
 export async function inviteCrewMember(form: FormData) {
   const { supabase } = await requireOperationalRole(
     ["provider_owner", "provider_manager"],

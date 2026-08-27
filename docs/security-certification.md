@@ -17,20 +17,42 @@ verification enabled. Do not use real customer information.
 
 ## Certification record
 
-| Field | Value |
-|---|---|
-| Date (UTC) | |
-| Commit | |
-| Environment URL | |
-| Supabase project | staging / linked test project |
-| Tester | |
-| Callback allowlist | blocked / failed / passed |
-| Customer A lifecycle | blocked / failed / passed |
-| Customer B isolation | blocked / failed / passed |
-| Anonymous isolation | automated / failed / passed |
-| Provider/crew lifecycle | blocked / failed / passed |
-| Completion lifecycle | blocked / failed / passed |
-| Overall | blocked / failed / passed |
+| Field                   | Value                         |
+| ----------------------- | ----------------------------- |
+| Date (UTC)              |                               |
+| Commit                  |                               |
+| Environment URL         |                               |
+| Supabase project        | staging / linked test project |
+| Tester                  |                               |
+| Callback allowlist      | blocked / failed / passed     |
+| Customer A lifecycle    | blocked / failed / passed     |
+| Customer B isolation    | blocked / failed / passed     |
+| Anonymous isolation     | automated / failed / passed   |
+| Provider/crew lifecycle | blocked / failed / passed     |
+| Completion lifecycle    | blocked / failed / passed     |
+| Overall                 | blocked / failed / passed     |
+
+For every individual check, record: UTC date, environment name, deployment
+URL, Git commit, highest migration, role, synthetic identifier, test name,
+status, sanitized reason, and cleanup status. Use
+`node scripts/create-certification-record.mjs --help` to produce a validated,
+secret-free JSONL record. Store working results outside Git.
+
+## Current blocked management checks
+
+Codex has no authorized Supabase Authentication URL Configuration surface in
+this workspace. In Supabase Dashboard, open the linked staging project, then
+Authentication → URL Configuration:
+
+1. Confirm the production Site URL remains `https://muberapp.vercel.app`.
+2. Add the exact production callback and reset routes.
+3. Add the exact current Preview callback and reset routes for the deployment
+   under certification.
+4. Retain only required exact localhost callback/reset routes.
+5. Remove obsolete Preview entries and broad wildcards only after confirming
+   they are unused.
+6. Save, test verification and password reset in both environments, and record
+   the inspection time and result without copying tokens or signed links.
 
 ## Human-assisted checklist
 
@@ -49,6 +71,9 @@ verification enabled. Do not use real customer information.
 6. Assign a synthetic job and exercise crew confirmation, ready, en route,
    arrived, in progress, evidence, completion review, dispatcher approval, and
    customer-visible evidence.
+7. Exercise dispatcher, compliance, finance, and super-admin identities.
+   Confirm finance cannot read dispatch, credential, incident, or audit data;
+   confirm every privileged role assignment produces an immutable audit event.
 
 ## Database pass/fail checks
 
