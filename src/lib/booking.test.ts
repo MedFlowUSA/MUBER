@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { emptyDraft, validPhoto, validateBooking } from "./booking";
+import {
+  bookingItems,
+  emptyDraft,
+  validPhoto,
+  validateBooking,
+} from "./booking";
 describe("booking validation", () => {
   it("rejects an incomplete move", () =>
     expect(validateBooking(emptyDraft("move"))).toHaveProperty("pickup"));
@@ -25,5 +30,18 @@ describe("booking validation", () => {
     expect(validPhoto({ type: "image/png", size: 11 * 1024 * 1024 })).toBe(
       false,
     );
+  });
+  it("builds structured moving inventory without inventing prices", () => {
+    const draft = {
+      ...emptyDraft("move"),
+      rooms: ["Bedroom", "Garage"],
+      moveInventory: ["Bed", "Tool chest", " Bed "],
+    };
+    expect(bookingItems(draft)).toEqual([
+      "Room: Bedroom",
+      "Room: Garage",
+      "Bed",
+      "Tool chest",
+    ]);
   });
 });

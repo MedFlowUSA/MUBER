@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { bookingItems } from "@/lib/booking";
 import { logApiEvent } from "@/lib/operational-telemetry";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 const schema = z.object({
@@ -10,6 +11,8 @@ const schema = z.object({
       destination: z.string().max(500),
       date: z.string().min(1),
       timeWindow: z.string().min(1),
+      rooms: z.array(z.string().min(1).max(120)).max(20).default([]),
+      moveInventory: z.array(z.string().min(1).max(120)).max(50).default([]),
       description: z.string().max(5000),
       access: z.string().max(1000),
       categories: z.array(z.string().max(120)).max(30),
@@ -53,7 +56,7 @@ export async function POST(request: NextRequest) {
       p_payload: {
         ...d,
         stops,
-        items: d.service === "remove" ? d.categories : [],
+        items: bookingItems(d),
       },
       p_idempotency_key: body.idempotencyKey,
     });

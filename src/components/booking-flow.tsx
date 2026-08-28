@@ -315,8 +315,54 @@ function Step({
       <>
         <Title
           title="Tell us about the move"
-          copy="A little context helps a professional scope the job."
+          copy="Structured details help MUBER review scope before quoting and assignment."
         />
+        <div className="mb-7">
+          <h3 className="font-black">Rooms or areas</h3>
+          <p className="mt-1 text-sm text-slate">Select all that apply.</p>
+          <div className="mt-3">
+            <Choices
+              selected={draft.rooms}
+              set={(v) => set("rooms", v)}
+              options={[
+                "Bedroom",
+                "Living room",
+                "Dining room",
+                "Kitchen",
+                "Office",
+                "Garage",
+                "Storage unit",
+                "Outdoor",
+              ]}
+            />
+          </div>
+        </div>
+        <div className="mb-7">
+          <h3 className="font-black">Common items</h3>
+          <p className="mt-1 text-sm text-slate">
+            Add the major items you already know about.
+          </p>
+          <div className="mt-3">
+            <Choices
+              selected={draft.moveInventory}
+              set={(v) => set("moveInventory", v)}
+              options={[
+                "Bed",
+                "Dresser",
+                "Sofa",
+                "Dining table",
+                "Desk",
+                "Television",
+                "Refrigerator",
+                "Washer or dryer",
+                "Boxes",
+                "Patio furniture",
+                "Tool chest",
+                "Other large item",
+              ]}
+            />
+          </div>
+        </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <Select
             label="Move type"
@@ -493,6 +539,14 @@ function Step({
           Window: draft.timeWindow,
           Contact: draft.name,
           Email: draft.email,
+          Rooms:
+            service === "move" && draft.rooms.length
+              ? draft.rooms.join(", ")
+              : undefined,
+          "Major items":
+            service === "move" && draft.moveInventory.length
+              ? `${draft.moveInventory.length} selected`
+              : undefined,
           Photos: `${draft.photos.length} selected`,
         })
           .filter(([, v]) => v)
@@ -589,6 +643,7 @@ function Choices({
         <button
           type="button"
           key={o}
+          aria-pressed={selected.includes(o)}
           onClick={() =>
             set(
               selected.includes(o)

@@ -8,6 +8,8 @@ export type BookingDraft = {
   timeWindow: string;
   moveType: string;
   truckOption: string;
+  rooms: string[];
+  moveInventory: string[];
   description: string;
   access: string;
   specialty: string;
@@ -30,6 +32,8 @@ export const emptyDraft = (service: ServiceKind): BookingDraft => ({
   timeWindow: "",
   moveType: "",
   truckOption: "",
+  rooms: [],
+  moveInventory: [],
   description: "",
   access: "",
   specialty: "",
@@ -83,6 +87,18 @@ export function validateBooking(draft: BookingDraft) {
     : Object.fromEntries(
         parsed.error.issues.map((i) => [i.path.join("."), i.message]),
       );
+}
+export function bookingItems(
+  draft: Pick<
+    BookingDraft,
+    "service" | "categories" | "rooms" | "moveInventory"
+  >,
+) {
+  const items =
+    draft.service === "remove"
+      ? draft.categories
+      : [...draft.rooms.map((room) => `Room: ${room}`), ...draft.moveInventory];
+  return [...new Set(items.map((item) => item.trim()).filter(Boolean))];
 }
 export const bookingRepository = {
   async submitLocal(draft: BookingDraft) {
