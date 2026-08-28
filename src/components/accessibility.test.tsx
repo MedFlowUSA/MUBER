@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import Home from "@/app/page";
 import { AuthForm } from "./auth-form";
 import { BookingFlow } from "./booking-flow";
+import { CompletionEvidenceUpload } from "./completion-evidence-upload";
 import { ToastProvider } from "./toast";
 
 vi.mock("next/navigation", () => ({
@@ -98,6 +99,25 @@ describe("automated accessibility", () => {
           );
         }
       }
+    },
+  );
+
+  it.each([true, false])(
+    "finds no detectable violations in completion evidence (draft=%s)",
+    async (draft) => {
+      const { container } = render(
+        <CompletionEvidenceUpload
+          submission="48e11195-c250-4618-9bab-4f0aee50597a"
+          job="2597428d-0fee-459a-9e6b-501d4180961d"
+          draft={draft}
+        />,
+      );
+      await expectNoAutomatedViolations(container);
+      const incidentOption = screen.queryByRole("option", {
+        name: "Incident evidence (internal)",
+      });
+      if (draft) expect(incidentOption).not.toBeInTheDocument();
+      else expect(incidentOption).toBeInTheDocument();
     },
   );
 });

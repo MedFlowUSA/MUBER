@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { completionMediaSchema } from "@/lib/private-media-validation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 export async function POST(
   request: NextRequest,
@@ -14,25 +16,24 @@ export async function POST(
       { error: "Authentication required" },
       { status: 401 },
     );
-  let body: {
-    path?: string;
-    purpose?: string;
-    customerVisible?: boolean;
-    mime?: string;
-    size?: number;
-  };
-  try {
-    body = await request.json();
-  } catch {
+  if (!z.string().uuid().safeParse(id).success)
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
+  const parsed = completionMediaSchema.safeParse(
+    await request.json().catch(() => null),
+  );
+  if (!parsed.success)
+    return NextResponse.json(
+      { error: "Invalid evidence metadata" },
+      { status: 400 },
+    );
+  const body = parsed.data;
   const { data, error } = await supabase.rpc("register_completion_media", {
     p_submission: id,
-    p_path: body.path || "",
-    p_purpose: body.purpose || "",
-    p_customer_visible: Boolean(body.customerVisible),
-    p_mime: body.mime || "",
-    p_size: Number(body.size || 0),
+    p_path: body.path,
+    p_purpose: body.purpose,
+    p_customer_visible: body.customerVisible,
+    p_mime: body.mime,
+    p_size: body.size,
   });
   if (error)
     return NextResponse.json(

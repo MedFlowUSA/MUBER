@@ -74,10 +74,20 @@ export function CompletionEvidenceUpload({
         >
           <option value="before">Before photo</option>
           <option value="after">After photo</option>
+          {draft && (
+            <>
+              <option value="item_condition">Item condition</option>
+              <option value="damage">Damage documentation</option>
+            </>
+          )}
           <option value="disposal_receipt">Disposal receipt</option>
           <option value="donation_receipt">Donation receipt</option>
-          <option value="incident">Incident evidence (internal)</option>
-          <option value="other">Other evidence</option>
+          {!draft && (
+            <>
+              <option value="incident">Incident evidence (internal)</option>
+              <option value="other">Other evidence</option>
+            </>
+          )}
         </select>
       </label>
       <label className="font-bold">
@@ -90,10 +100,16 @@ export function CompletionEvidenceUpload({
           className="mt-1 block w-full rounded-xl border p-3 font-normal"
         />
       </label>
-      <label className="text-sm">
-        <input type="checkbox" name="customer_visible" /> Allow customer to view
-        after review
-      </label>
+      {draft ? (
+        <p className="text-sm text-slate">
+          Customer visibility follows the evidence policy and dispatcher review.
+        </p>
+      ) : (
+        <label className="text-sm">
+          <input type="checkbox" name="customer_visible" /> Allow customer to
+          view after review
+        </label>
+      )}
       <button
         disabled={busy}
         className="rounded-xl bg-navy px-5 py-3 font-bold text-white disabled:opacity-50"
