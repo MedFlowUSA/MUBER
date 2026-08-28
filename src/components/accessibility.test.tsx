@@ -37,6 +37,11 @@ describe("automated accessibility", () => {
   it("finds no detectable violations on the homepage", async () => {
     const { container } = render(<Home />);
     await expectNoAutomatedViolations(container);
+    expect(
+      screen.getAllByRole("link", { name: "Log in" }).length,
+    ).toBeGreaterThan(0);
+    expect(container).toHaveTextContent("California 92373");
+    expect(container).not.toHaveTextContent("92313");
   });
 
   it.each([

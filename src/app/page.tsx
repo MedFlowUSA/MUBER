@@ -120,7 +120,7 @@ export default function Home() {
           <div className="shell">
             <p className="eyebrow">Confidence at every step</p>
             <h2 className="mt-3 max-w-2xl text-4xl font-black tracking-[-.04em]">
-              Managed service—not another lead directory.
+              A managed experience from request to completion.
             </h2>
             <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {trust.map(({ icon: Icon, title, copy }) => (

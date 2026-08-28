@@ -21,6 +21,9 @@ export function Header() {
               {x.label}
             </Link>
           ))}
+          <Link className="text-sm font-black text-navy" href="/portal">
+            Log in
+          </Link>
           <Link className="btn-primary" href="/book/move">
             Book a job
           </Link>
@@ -42,6 +45,12 @@ export function Header() {
                 {x.label}
               </Link>
             ))}
+            <Link
+              className="block rounded-xl p-3 font-black hover:bg-warm"
+              href="/portal"
+            >
+              Log in
+            </Link>
             <Link className="btn-primary mt-2 w-full" href="/book/move">
               Book a job
             </Link>
@@ -74,7 +83,11 @@ export function Footer() {
             ["Terms", "/terms"],
             ["Providers", "/provider"],
             ["Support", "/support"],
-            ["Customer", "/customer"],
+            ["Log in", "/portal"],
+            ["Customer portal", "/customer"],
+            ["Contractor portal", "/provider/dashboard"],
+            ["Crew portal", "/crew"],
+            ["Staff portal", "/portal"],
             ["Business partners", "/business"],
           ].map(([a, b]) => (
             <Link key={a} href={b} className="hover:text-white">
