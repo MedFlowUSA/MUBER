@@ -317,6 +317,14 @@ try {
     ["jobs", `id=eq.${job.job_id}`],
     ["job_status_events", `job_id=eq.${job.job_id}`],
     ["job_media", `job_id=eq.${job.job_id}`],
+    ["quote_versions", `job_id=eq.${job.job_id}`],
+    ["job_information_requests", `job_id=eq.${job.job_id}`],
+    ["job_information_responses", `job_id=eq.${job.job_id}`],
+    ["completion_submissions", `job_id=eq.${job.job_id}`],
+    ["completion_media", `job_id=eq.${job.job_id}`],
+    ["incidents", `job_id=eq.${job.job_id}`],
+    ["incident_evidence", `job_id=eq.${job.job_id}`],
+    ["in_app_notifications", `recipient_id=eq.${a.userId}`],
   ]) {
     const denied = await json(`${base}/rest/v1/${table}?${query}&select=*`, {
       headers: apiHeaders(b.access),
@@ -335,6 +343,46 @@ try {
     },
   );
   assert("cross-customer signed URL denial", !signedDenied.r.ok);
+  const anonymousSignedDenied = await json(
+    `${base}/storage/v1/object/sign/job-media/${path}`,
+    {
+      method: "POST",
+      headers: apiHeaders(key),
+      body: JSON.stringify({ expiresIn: 60 }),
+    },
+  );
+  assert("anonymous signed URL denial", !anonymousSignedDenied.r.ok);
+  const crossCustomerUpload = await fetch(
+    `${base}/storage/v1/object/job-media/${a.userId}/${job.job_id}/${crypto.randomUUID()}.png`,
+    {
+      method: "POST",
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${b.access}`,
+        "content-type": "image/png",
+        "x-upsert": "false",
+      },
+      body: png,
+    },
+  );
+  assert("cross-customer upload path denial", !crossCustomerUpload.ok);
+  const crossCustomerRegistration = await json(
+    `${base}/rest/v1/rpc/register_job_media`,
+    {
+      method: "POST",
+      headers: apiHeaders(b.access),
+      body: JSON.stringify({
+        p_job: job.job_id,
+        p_path: path,
+        p_mime: "image/png",
+        p_size: png.length,
+      }),
+    },
+  );
+  assert(
+    "cross-customer media ownership substitution denial",
+    !crossCustomerRegistration.r.ok,
+  );
   const otherMessages = await json(
     `${base}/rest/v1/rpc/get_job_messages_page`,
     {
@@ -418,6 +466,14 @@ try {
     "job_media",
     "job_messages",
     "job_message_attachments",
+    "quote_versions",
+    "job_information_requests",
+    "job_information_responses",
+    "completion_submissions",
+    "completion_media",
+    "incidents",
+    "incident_evidence",
+    "in_app_notifications",
   ]) {
     const anon = await json(`${base}/rest/v1/${table}?select=*`, {
       headers: apiHeaders(key),
