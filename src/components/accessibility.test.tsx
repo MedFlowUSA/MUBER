@@ -1,6 +1,7 @@
 import React from "react";
 import axe from "axe-core";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import Home from "@/app/page";
 import { AuthForm } from "./auth-form";
@@ -37,24 +38,66 @@ describe("automated accessibility", () => {
     await expectNoAutomatedViolations(container);
   });
 
-  it("finds no detectable violations in authentication", async () => {
+  it.each([
+    ["login", "Welcome back"],
+    ["register", "Create your account"],
+    ["forgot", "Reset your password"],
+    ["reset", "Choose a new password"],
+  ] as const)("finds no detectable violations in %s", async (kind, title) => {
     const { container } = render(
       <AuthForm
-        title="Welcome back"
-        copy="Sign in to your account."
+        title={title}
+        copy="Secure account access."
         action={async () => undefined}
-        kind="login"
+        kind={kind}
+        error={
+          kind === "login" ? "The supplied credentials are invalid." : undefined
+        }
       />,
     );
     await expectNoAutomatedViolations(container);
   });
 
-  it("finds no detectable violations in the booking flow", async () => {
-    const { container } = render(
-      <ToastProvider>
-        <BookingFlow service="move" />
-      </ToastProvider>,
-    );
-    await expectNoAutomatedViolations(container);
-  });
+  it.each([
+    [
+      "move",
+      [
+        "Where are you moving?",
+        "When works best?",
+        "Tell us about the move",
+        "Access and photos",
+        "How can we reach you?",
+        "Review your request",
+      ],
+    ],
+    [
+      "remove",
+      [
+        "Where should we pick up?",
+        "When works best?",
+        "What needs to go?",
+        "Access and photos",
+        "How can we reach you?",
+        "Review your request",
+      ],
+    ],
+  ] as const)(
+    "finds no detectable violations in the %s flow",
+    async (service, headings) => {
+      const { container } = render(
+        <ToastProvider>
+          <BookingFlow service={service} />
+        </ToastProvider>,
+      );
+      for (const [index, heading] of headings.entries()) {
+        await screen.findByRole("heading", { level: 2, name: heading });
+        await expectNoAutomatedViolations(container);
+        if (index < headings.length - 1) {
+          await userEvent.click(
+            screen.getByRole("button", { name: /continue/i }),
+          );
+        }
+      }
+    },
+  );
 });
