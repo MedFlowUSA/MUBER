@@ -8,6 +8,11 @@ export function AuthForm({
   error,
   next,
   sent,
+  eyebrow = "Secure account access",
+  authPath = "/auth/login",
+  registerHref = "/auth/register",
+  loginHref = "/auth/login",
+  allowRegistration = true,
 }: {
   title: string;
   copy: string;
@@ -16,13 +21,18 @@ export function AuthForm({
   error?: string;
   next?: string;
   sent?: boolean;
+  eyebrow?: string;
+  authPath?: string;
+  registerHref?: string;
+  loginHref?: string;
+  allowRegistration?: boolean;
 }) {
   return (
     <main className="grid min-h-screen place-items-center bg-warm p-5">
       <div className="w-full max-w-md">
         <Logo />
         <section className="card mt-8">
-          <p className="eyebrow">Customer account</p>
+          <p className="eyebrow">{eyebrow}</p>
           <h1 className="mt-3 text-3xl font-black">{title}</h1>
           <p className="mt-3 text-sm leading-6 text-slate">
             {sent
@@ -39,6 +49,7 @@ export function AuthForm({
           )}
           <form action={action} className="mt-7 space-y-4">
             <input type="hidden" name="next" value={next || "/customer"} />
+            <input type="hidden" name="authPath" value={authPath} />
             {kind === "register" && (
               <label>
                 <span className="label">Full name</span>
@@ -90,15 +101,19 @@ export function AuthForm({
           <div className="mt-6 flex justify-between text-sm font-bold">
             {kind === "login" ? (
               <>
-                <Link
-                  href={`/auth/register?next=${encodeURIComponent(next || "/customer")}`}
-                >
-                  Create account
-                </Link>
+                {allowRegistration ? (
+                  <Link
+                    href={`${registerHref}?next=${encodeURIComponent(next || "/customer")}`}
+                  >
+                    Create account
+                  </Link>
+                ) : (
+                  <span>Authorized staff only</span>
+                )}
                 <Link href="/auth/forgot">Forgot password?</Link>
               </>
             ) : (
-              <Link href="/auth/login">Back to sign in</Link>
+              <Link href={loginHref}>Back to sign in</Link>
             )}
           </div>
         </section>

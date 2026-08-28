@@ -94,10 +94,10 @@ export function Footer() {
             ["Providers", "/provider"],
             ["Support", "/support"],
             ["Log in", "/portal"],
-            ["Customer portal", "/customer"],
-            ["Contractor portal", "/provider/dashboard"],
+            ["Customer portal", "/customer/login"],
+            ["Contractor portal", "/contractor/login"],
             ["Crew portal", "/crew"],
-            ["Staff portal", "/portal"],
+            ["Staff portal", "/admin/login"],
             ["Business partners", "/business"],
           ].map(([a, b]) => (
             <Link key={a} href={b} className="hover:text-white">

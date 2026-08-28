@@ -11,7 +11,7 @@ export async function submitProviderApplication(form: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login?next=/provider/apply");
+  if (!user) redirect("/contractor/login?next=/provider/apply");
   const payload = {
     applicant_id: user.id,
     legal_name: String(form.get("legal_name") || "").trim(),

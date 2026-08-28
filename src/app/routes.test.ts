@@ -6,6 +6,11 @@ const routes = [
   "book/move/page.tsx",
   "book/remove/page.tsx",
   "customer/page.tsx",
+  "customer/login/page.tsx",
+  "customer/register/page.tsx",
+  "contractor/login/page.tsx",
+  "contractor/register/page.tsx",
+  "contractor/page.tsx",
   "provider/page.tsx",
   "provider/profile/page.tsx",
   "provider/availability/page.tsx",
@@ -24,6 +29,7 @@ const routes = [
   "not-found.tsx",
   "portal/page.tsx",
   "admin/page.tsx",
+  "admin/login/page.tsx",
   "admin/audit/page.tsx",
 ];
 describe("route smoke checks", () => {

@@ -6,15 +6,30 @@ function safeNext(value: FormDataEntryValue | null) {
   const path = typeof value === "string" && value ? value : "/portal";
   return path.startsWith("/") && !path.startsWith("//") ? path : "/portal";
 }
+const authPaths = new Set([
+  "/auth/login",
+  "/auth/register",
+  "/customer/login",
+  "/customer/register",
+  "/contractor/login",
+  "/contractor/register",
+  "/admin/login",
+]);
+function safeAuthPath(value: FormDataEntryValue | null, fallback: string) {
+  const path = typeof value === "string" ? value : "";
+  return authPaths.has(path) ? path : fallback;
+}
 export async function login(form: FormData) {
   const supabase = await createSupabaseServerClient();
   const email = String(form.get("email") ?? "");
   const password = String(form.get("password") ?? "");
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error)
+  if (error) {
+    const path = safeAuthPath(form.get("authPath"), "/auth/login");
     redirect(
-      `/auth/login?error=${encodeURIComponent("Email or password was not accepted")}`,
+      `${path}?error=${encodeURIComponent("Email or password was not accepted")}&next=${encodeURIComponent(safeNext(form.get("next")))}`,
     );
+  }
   redirect(safeNext(form.get("next")));
 }
 export async function register(form: FormData) {
@@ -22,9 +37,11 @@ export async function register(form: FormData) {
   const email = String(form.get("email") ?? "");
   const password = String(form.get("password") ?? "");
   const full_name = String(form.get("name") ?? "").trim();
+  const registerPath = safeAuthPath(form.get("authPath"), "/customer/register");
+  const registrationNext = safeNext(form.get("next"));
   if (password.length < 8)
     redirect(
-      "/auth/register?error=Password%20must%20be%20at%20least%208%20characters",
+      `${registerPath}?error=Password%20must%20be%20at%20least%208%20characters&next=${encodeURIComponent(registrationNext)}`,
     );
   const origin =
     (await headers()).get("origin") ||
@@ -35,15 +52,15 @@ export async function register(form: FormData) {
     password,
     options: {
       data: { full_name },
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(safeNext(form.get("next")))}`,
+      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(registrationNext)}`,
     },
   });
   if (error)
     redirect(
-      `/auth/register?error=${encodeURIComponent("Account could not be created")}`,
+      `${registerPath}?error=${encodeURIComponent("Account could not be created")}&next=${encodeURIComponent(registrationNext)}`,
     );
   if (!data.session) redirect("/auth/verify");
-  redirect(safeNext(form.get("next")));
+  redirect(registrationNext);
 }
 export async function logout() {
   const supabase = await createSupabaseServerClient();

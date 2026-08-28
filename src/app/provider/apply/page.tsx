@@ -13,7 +13,7 @@ export default async function Page({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login?next=/provider/apply");
+  if (!user) redirect("/contractor/login?next=/provider/apply");
   if (p.submitted)
     return (
       <main className="shell grid min-h-screen place-items-center py-12">

@@ -12,7 +12,7 @@ export default async function Page() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login?next=/customer");
+  if (!user) redirect("/customer/login?next=/customer");
   const [{ data, error }, { data: conversationCounts }] = await Promise.all([
     supabase
       .from("jobs")

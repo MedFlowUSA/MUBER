@@ -22,7 +22,7 @@ export async function updateSession(request: NextRequest) {
   } = await client.auth.getUser();
   if (request.nextUrl.pathname.startsWith("/customer") && !user) {
     const login = request.nextUrl.clone();
-    login.pathname = "/auth/login";
+    login.pathname = "/customer/login";
     login.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(login);
   }

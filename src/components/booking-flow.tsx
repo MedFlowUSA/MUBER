@@ -94,7 +94,7 @@ export function BookingFlow({ service }: { service: ServiceKind }) {
       });
       if (response.status === 401) {
         router.push(
-          `/auth/login?next=${encodeURIComponent(location.pathname)}`,
+          `/customer/login?next=${encodeURIComponent(location.pathname)}`,
         );
         return;
       }

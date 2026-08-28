@@ -46,7 +46,7 @@ export default async function Page({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(`/auth/login?next=/customer/jobs/${id}`);
+  if (!user) redirect(`/customer/login?next=/customer/jobs/${id}`);
   const { data: job } = await supabase
     .from("jobs")
     .select(
