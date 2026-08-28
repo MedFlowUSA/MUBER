@@ -2,7 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { submitProviderApplication } from "./actions";
+import {
+  resubmitProviderInformation,
+  submitProviderApplication,
+} from "./actions";
 import { providerApplicationStatus } from "@/lib/provider-application-status";
 
 type ApplicationStatus = {
@@ -13,11 +16,16 @@ type ApplicationStatus = {
   submitted_at: string | null;
   decided_at: string | null;
   updated_at: string;
+  applicant_message: string | null;
 };
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; submitted?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    submitted?: string;
+    resubmitted?: string;
+  }>;
 }) {
   const p = await searchParams;
   const supabase = await createSupabaseServerClient();
@@ -65,6 +73,34 @@ export default async function Page({
             An application does not guarantee jobs and does not enable payment
             capability.
           </p>
+          {application.status === "information_requested" && (
+            <form action={resubmitProviderInformation} className="mt-6">
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+                <p className="text-sm font-black">Requested information</p>
+                <p className="mt-2 leading-6">
+                  {application.applicant_message ||
+                    "Contact MUBER support for the requested information."}
+                </p>
+              </div>
+              {p.error && (
+                <p role="alert" className="mt-4 text-sm font-bold text-red-700">
+                  {p.error}
+                </p>
+              )}
+              <label className="mt-5 block font-bold">
+                Your response
+                <textarea
+                  name="response"
+                  required
+                  minLength={10}
+                  maxLength={4000}
+                  className="field mt-2 min-h-36 font-normal"
+                  placeholder="Provide the requested details. Do not include banking information."
+                />
+              </label>
+              <button className="btn-primary mt-4">Resubmit for review</button>
+            </form>
+          )}
           <div className="mt-8 flex flex-wrap gap-3">
             {application.status === "approved" && (
               <Link href="/provider/dashboard" className="btn-primary">

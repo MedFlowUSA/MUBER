@@ -33,7 +33,7 @@ export default async function ProviderReviewsPage({ searchParams }: Props) {
   let applicationQuery = supabase
     .from("provider_applications")
     .select(
-      "id,legal_name,dba_name,contact_name,business_email,service_categories,service_territory,status,submitted_at,internal_reason",
+      "id,legal_name,dba_name,contact_name,business_email,service_categories,service_territory,status,submitted_at,internal_reason,applicant_message,applicant_response",
       { count: "exact" },
     );
   if (filters.applicationQ)
@@ -339,12 +339,24 @@ export default async function ProviderReviewsPage({ searchParams }: Props) {
                 <strong>Internal reason:</strong> {application.internal_reason}
               </p>
             )}
+            {application.applicant_message && (
+              <p className="mt-2 text-sm">
+                <strong>Contractor-safe request:</strong>{" "}
+                {application.applicant_message}
+              </p>
+            )}
+            {application.applicant_response && (
+              <p className="mt-2 rounded-xl bg-blue-50 p-3 text-sm text-blue-950">
+                <strong>Applicant response:</strong>{" "}
+                {application.applicant_response}
+              </p>
+            )}
             {!["approved", "rejected", "suspended"].includes(
               application.status,
             ) && (
               <form
                 action={reviewProviderApplication}
-                className="mt-5 grid gap-3 md:grid-cols-[1fr_auto_auto_auto_auto]"
+                className="mt-5 grid gap-3 md:grid-cols-2"
               >
                 <input
                   type="hidden"
@@ -352,41 +364,50 @@ export default async function ProviderReviewsPage({ searchParams }: Props) {
                   value={application.id}
                 />
                 <input
+                  name="applicant_message"
+                  aria-label="Contractor-safe information request"
+                  placeholder="Contractor-safe request (required when requesting information)"
+                  maxLength={1000}
+                  className="rounded-xl border border-slate-300 px-4 py-3 text-sm"
+                />
+                <input
                   name="reason"
                   aria-label="Internal review reason"
                   placeholder="Required for information requests or rejection"
                   className="rounded-xl border border-slate-300 px-4 py-3 text-sm"
                 />
-                {application.status === "submitted" && (
+                <div className="flex flex-wrap gap-2 md:col-span-2">
+                  {application.status === "submitted" && (
+                    <button
+                      name="decision"
+                      value="under_review"
+                      className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold"
+                    >
+                      Start review
+                    </button>
+                  )}
                   <button
                     name="decision"
-                    value="under_review"
+                    value="information_requested"
                     className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold"
                   >
-                    Start review
+                    Request info
                   </button>
-                )}
-                <button
-                  name="decision"
-                  value="information_requested"
-                  className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold"
-                >
-                  Request info
-                </button>
-                <button
-                  name="decision"
-                  value="rejected"
-                  className="rounded-xl border border-red-300 px-4 py-3 text-sm font-bold text-red-700"
-                >
-                  Reject
-                </button>
-                <button
-                  name="decision"
-                  value="approved"
-                  className="rounded-xl bg-orange-600 px-4 py-3 text-sm font-bold text-white"
-                >
-                  Approve
-                </button>
+                  <button
+                    name="decision"
+                    value="rejected"
+                    className="rounded-xl border border-red-300 px-4 py-3 text-sm font-bold text-red-700"
+                  >
+                    Reject
+                  </button>
+                  <button
+                    name="decision"
+                    value="approved"
+                    className="rounded-xl bg-orange-600 px-4 py-3 text-sm font-bold text-white"
+                  >
+                    Approve
+                  </button>
+                </div>
               </form>
             )}
           </article>

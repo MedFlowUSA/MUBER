@@ -61,3 +61,22 @@ export async function submitProviderApplication(form: FormData) {
     redirect("/provider/apply?error=Complete%20all%20required%20consents");
   redirect("/provider/apply?submitted=1");
 }
+
+export async function resubmitProviderInformation(form: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/contractor/login?next=/provider/apply");
+  const response = String(form.get("response") || "").trim();
+  if (response.length < 10 || response.length > 4000)
+    redirect("/provider/apply?error=Provide%20a%20complete%20response");
+  const { error } = await supabase.rpc("resubmit_provider_application", {
+    p_response: response,
+  });
+  if (error)
+    redirect(
+      "/provider/apply?error=The%20response%20could%20not%20be%20submitted",
+    );
+  redirect("/provider/apply?resubmitted=1");
+}

@@ -20,6 +20,7 @@ export async function reviewProviderApplication(form: FormData) {
   const application = String(form.get("application") || "");
   const decision = String(form.get("decision") || "");
   const reason = String(form.get("reason") || "").trim();
+  const applicantMessage = String(form.get("applicant_message") || "").trim();
   if (!/^[0-9a-f-]{36}$/i.test(application) || !allowed.has(decision)) {
     redirect("/admin/providers?error=Invalid%20review%20request");
   }
@@ -29,10 +30,17 @@ export async function reviewProviderApplication(form: FormData) {
   ) {
     redirect("/admin/providers?error=A%20specific%20reason%20is%20required");
   }
-  const { error } = await supabase.rpc("review_provider_application", {
+  if (decision === "information_requested" && applicantMessage.length < 10) {
+    redirect(
+      "/admin/providers?error=A%20contractor-safe%20information%20request%20is%20required",
+    );
+  }
+  const { error } = await supabase.rpc("review_provider_application_v2", {
     p_application: application,
     p_decision: decision,
     p_internal_reason: reason || null,
+    p_applicant_message:
+      decision === "information_requested" ? applicantMessage : null,
   });
   if (error) {
     redirect(`/admin/providers?error=${encodeURIComponent(error.message)}`);
