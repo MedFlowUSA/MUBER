@@ -106,10 +106,17 @@ async function customer() {
     if (!verify) throw new Error("Verification link not found");
     const verified = await fetch(verify, { redirect: "manual" });
     const location = verified.headers.get("location") || "";
-    assert(
-      "email verification redirect is approved",
-      location.startsWith(callback),
-    );
+    if (!location.startsWith(callback)) {
+      let safeDestination = "invalid redirect";
+      try {
+        const destination = new URL(location);
+        safeDestination = `${destination.origin}${destination.pathname}`;
+      } catch {}
+      throw new Error(
+        `FAILED: email verification redirect is approved (received ${safeDestination})`,
+      );
+    }
+    assert("email verification redirect is approved", true);
     const fragment = new URL(location).hash.slice(1);
     const params = new URLSearchParams(fragment);
     access = params.get("access_token");

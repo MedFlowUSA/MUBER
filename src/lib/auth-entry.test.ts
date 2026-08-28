@@ -35,4 +35,22 @@ describe("separated authentication entry points", () => {
     const callback = source("app/auth/callback/route.ts");
     expect(callback).toContain('!requestedNext.startsWith("//")');
   });
+
+  it("keeps production, preview, and localhost auth redirects exact", () => {
+    const config = fs.readFileSync(
+      path.join(process.cwd(), "supabase/config.toml"),
+      "utf8",
+    );
+    expect(config).toContain('site_url = "https://muberapp.vercel.app"');
+    expect(config).toContain(
+      '"https://muber-g36iy4b5z-manuel-rodriguezs-projects-f5946c44.vercel.app/auth/callback"',
+    );
+    expect(config).toContain(
+      '"https://muber-g36iy4b5z-manuel-rodriguezs-projects-f5946c44.vercel.app/auth/reset"',
+    );
+    expect(config).toContain('"http://localhost:3000/auth/callback"');
+    expect(config).toContain('"http://localhost:3000/auth/reset"');
+    expect(config).not.toContain("**");
+    expect(config).toContain("enable_confirmations = true");
+  });
 });
