@@ -70,8 +70,12 @@ async function waitForMessage(box, subject, timeout = 90000) {
   }
   throw new Error(`Timed out waiting for ${subject} email`);
 }
+const boxes = [];
 async function customer() {
   const box = await mailbox();
+  // Register the mailbox for cleanup immediately. Certification can fail at
+  // any later assertion, including before this function returns a customer.
+  boxes.push(box);
   const password = crypto.randomBytes(24).toString("base64url") + "A1!";
   const signup = await json(
     `${base}/auth/v1/signup?redirect_to=${encodeURIComponent(callback)}`,
@@ -146,12 +150,9 @@ async function cleanup(box) {
     headers: { Authorization: `Bearer ${box.token}` },
   });
 }
-const boxes = [];
 try {
   const a = await customer();
-  boxes.push(a);
   const b = await customer();
-  boxes.push(b);
   assert("two independent verified customers", a.userId !== b.userId);
   const payload = {
     service: "remove",

@@ -350,6 +350,20 @@ describe("portal separation", () => {
     expect(script).toContain("job_message_attachments");
     expect(script).not.toContain("muber-m2ej2e7r2");
   });
+
+  it("registers disposable mailboxes for cleanup before verification assertions", () => {
+    const script = fs.readFileSync(
+      path.join(process.cwd(), "scripts/verify-phase15-live.mjs"),
+      "utf8",
+    );
+    const mailboxCreated = script.indexOf("const box = await mailbox()");
+    const cleanupRegistered = script.indexOf("boxes.push(box)", mailboxCreated);
+    const signupStarted = script.indexOf("/auth/v1/signup", mailboxCreated);
+    expect(mailboxCreated).toBeGreaterThan(-1);
+    expect(cleanupRegistered).toBeGreaterThan(mailboxCreated);
+    expect(cleanupRegistered).toBeLessThan(signupStarted);
+    expect(script).toContain("await Promise.allSettled(boxes.map(cleanup))");
+  });
   it("derives credential warning dates from the database clock", () => {
     const page = fs.readFileSync(
       path.join(process.cwd(), "src/app/provider/credentials/page.tsx"),
