@@ -84,6 +84,15 @@ export default function PrivacyPage() {
           MUBER does not currently use uploaded images for automated or
           AI-generated pricing. Photos support human scope and quote review.
         </p>
+        <h3>AI-assisted telephone reception</h3>
+        <p>
+          Calls to MUBER&apos;s published phone number may be answered by an
+          AI-assisted receptionist. The system processes information callers
+          choose to provide so MUBER can understand and respond to an inquiry.
+          Do not provide passwords, payment-card information, government
+          identification numbers, or unrelated sensitive information by phone.
+          The telephone line is not an emergency service.
+        </p>
       </LegalSection>
       <LegalSection id="disclosures" title="5. How we disclose information">
         <ul>

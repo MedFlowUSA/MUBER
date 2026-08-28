@@ -4,6 +4,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import Home from "@/app/page";
+import PrivacyPage from "@/app/privacy/page";
+import SupportPage from "@/app/support/page";
+import { MUBER_PHONE_DISPLAY, MUBER_PHONE_TEL } from "@/lib/contact";
 import { AuthForm } from "./auth-form";
 import { BookingFlow } from "./booking-flow";
 import { CompletionEvidenceUpload } from "./completion-evidence-upload";
@@ -42,6 +45,21 @@ describe("automated accessibility", () => {
     ).toBeGreaterThan(0);
     expect(container).toHaveTextContent("California 92373");
     expect(container).not.toHaveTextContent("92313");
+    expect(
+      screen.getByRole("link", { name: MUBER_PHONE_DISPLAY }),
+    ).toHaveAttribute("href", `tel:${MUBER_PHONE_TEL}`);
+  });
+
+  it("finds no detectable violations on phone support and privacy pages", async () => {
+    const support = await SupportPage({ searchParams: Promise.resolve({}) });
+    const { container, rerender } = render(support);
+    await expectNoAutomatedViolations(container);
+    expect(
+      screen.getAllByRole("link", { name: MUBER_PHONE_DISPLAY }).length,
+    ).toBeGreaterThan(0);
+    rerender(<PrivacyPage />);
+    await expectNoAutomatedViolations(container);
+    expect(container).toHaveTextContent("AI-assisted telephone reception");
   });
 
   it.each([

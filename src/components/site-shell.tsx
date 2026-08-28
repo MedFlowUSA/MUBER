@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Logo } from "./logo";
+import { MUBER_PHONE_DISPLAY, MUBER_PHONE_TEL } from "@/lib/contact";
 import { publicNav } from "@/lib/routes";
 
 export function Header() {
@@ -72,6 +73,15 @@ export function Footer() {
           </p>
           <p className="mt-4 text-sm font-black tracking-[.14em]">
             MOVE IT. <span className="text-orange">REMOVE IT.</span>
+          </p>
+          <p className="mt-5 text-sm text-white/75">
+            AI-assisted reception:{" "}
+            <a
+              className="font-black text-white hover:text-orange"
+              href={`tel:${MUBER_PHONE_TEL}`}
+            >
+              {MUBER_PHONE_DISPLAY}
+            </a>
           </p>
         </div>
         <nav

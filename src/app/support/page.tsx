@@ -1,4 +1,5 @@
 import { SiteShell } from "@/components/site-shell";
+import { MUBER_PHONE_DISPLAY, MUBER_PHONE_TEL } from "@/lib/contact";
 import { submitSupportRequest } from "./actions";
 type Props = { searchParams: Promise<{ error?: string; submitted?: string }> };
 export default async function SupportPage({ searchParams }: Props) {
@@ -16,6 +17,21 @@ export default async function SupportPage({ searchParams }: Props) {
             request. Do not include passwords, payment-card data, government
             identification numbers, or unrelated sensitive documents.
           </p>
+          <section className="mt-8 rounded-3xl bg-navy p-6 text-white sm:p-8">
+            <p className="eyebrow text-orange">Call MUBER</p>
+            <h2 className="mt-2 text-3xl font-black">
+              <a className="hover:text-orange" href={`tel:${MUBER_PHONE_TEL}`}>
+                {MUBER_PHONE_DISPLAY}
+              </a>
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75">
+              This line may be answered by an AI-assisted receptionist for
+              general questions and request intake. Do not provide passwords,
+              payment-card information, government identification numbers, or
+              emergency information. For immediate danger, contact local
+              emergency services.
+            </p>
+          </section>
           {query.error && (
             <p className="mt-6 rounded-xl bg-red-50 p-4 text-red-800">
               {query.error}
