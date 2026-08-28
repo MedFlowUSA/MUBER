@@ -148,6 +148,7 @@ export function BookingFlow({ service }: { service: ServiceKind }) {
     return (
       <div
         className="card h-80 animate-pulse"
+        role="status"
         aria-label="Loading saved draft"
       />
     );
