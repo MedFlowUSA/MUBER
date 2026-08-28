@@ -34,6 +34,7 @@ type EligibilityRow = {
   legal_name: string;
   eligible: boolean;
   reasons: string[];
+  qualifications: string[];
   vehicle_fit: boolean;
   crew_fit: boolean;
   credential_fit: boolean;
@@ -345,7 +346,9 @@ export default async function DispatchJob({ params, searchParams }: Props) {
           <p className="mt-2 text-sm text-slate">
             Approval, service, territory setup, availability, vehicle, crew,
             disposal capability, and verified unexpired credentials are checked.
-            No automated ranking is used.
+            No automated ranking is used. Territory configuration is not route
+            validation, so dispatch must confirm the job is inside the stated
+            service area before sending an offer.
           </p>
           <div className="mt-5 grid gap-3">
             {(eligibility || []).map(
@@ -354,6 +357,7 @@ export default async function DispatchJob({ params, searchParams }: Props) {
                 legal_name: string;
                 eligible: boolean;
                 reasons: string[];
+                qualifications: string[];
                 vehicle_fit: boolean;
                 crew_fit: boolean;
                 credential_fit: boolean;
@@ -378,12 +382,26 @@ export default async function DispatchJob({ params, searchParams }: Props) {
                     {" · "}Schedule:{" "}
                     {provider.schedule_fit ? "open" : "blocked"}
                   </p>
+                  {provider.qualifications.length > 0 && (
+                    <ul className="mt-3 list-disc pl-5 text-sm text-emerald-800">
+                      {provider.qualifications.map((qualification) => (
+                        <li key={qualification}>{qualification}</li>
+                      ))}
+                    </ul>
+                  )}
                   {provider.reasons.length > 0 && (
                     <ul className="mt-3 list-disc pl-5 text-sm text-red-700">
                       {provider.reasons.map((reason) => (
                         <li key={reason}>{reason}</li>
                       ))}
                     </ul>
+                  )}
+                  {!provider.eligible && (
+                    <p className="mt-3 text-xs font-semibold text-slate">
+                      Exclusions cannot be overridden here. Correct the provider
+                      record or lawfully reclassify the job with an audited
+                      review.
+                    </p>
                   )}
                   {provider.eligible && (
                     <form
