@@ -81,6 +81,13 @@ Run `scripts/security-certification.sql` only from a controlled administrative
 database session. Supply disposable UUIDs as transaction-local settings. The
 script reports boolean results only and never selects customer content.
 
+Run `scripts/database-security-audit.sql` from the Supabase SQL Editor or a
+controlled administrative `psql` session before release. It reads catalog
+metadata only and fails if it finds missing RLS, a public private bucket,
+missing private-storage policies, unsafe `SECURITY DEFINER` configuration, or
+missing immutable-history triggers. An empty findings result followed by a
+successful transaction rollback is a pass.
+
 Required settings:
 
 - `cert.customer_a_profile`
