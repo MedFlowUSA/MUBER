@@ -2,6 +2,7 @@ import { RoleShell } from "@/components/role-shell";
 import { requireOperationalRole } from "@/lib/authorization";
 import Link from "next/link";
 import { ConversationWorkload } from "@/components/conversation-workload";
+import { getProviderReadiness } from "@/lib/provider-readiness";
 export default async function Page() {
   const { supabase } = await requireOperationalRole(
     ["provider_owner", "provider_manager", "super_admin"],
@@ -13,11 +14,12 @@ export default async function Page() {
     .in("status", ["sent", "viewed"]);
   const [
     { data: company },
-    { count: credentials },
-    { count: vehicles },
-    { count: crews },
+    { data: credentials },
+    { data: vehicles },
+    { data: crews },
     { count: upcomingJobs },
     { data: conversationCounts },
+    { data: serviceDate },
   ] = await Promise.all([
     supabase
       .from("provider_companies")
@@ -27,29 +29,28 @@ export default async function Page() {
       .maybeSingle(),
     supabase
       .from("provider_credentials")
-      .select("id", { count: "exact", head: true })
-      .eq("verification_status", "verified"),
-    supabase
-      .from("vehicles")
-      .select("id", { count: "exact", head: true })
-      .eq("active", true),
-    supabase
-      .from("crews")
-      .select("id", { count: "exact", head: true })
-      .eq("active", true),
+      .select("verification_status,expires_at"),
+    supabase.from("vehicles").select("active,insurance_eligible"),
+    supabase.from("crews").select("active"),
     supabase
       .from("assignments")
       .select("id", { count: "exact", head: true })
       .in("status", ["accepted", "crew_assigned", "crew_confirmed", "ready"]),
     supabase.rpc("conversation_workload_counts"),
+    supabase.rpc("current_service_date"),
   ]);
-  const readiness = [
-    { label: "Company approved", ready: company?.status === "approved" },
-    { label: "Accepting offers", ready: Boolean(company?.available) },
-    { label: "Verified credentials", ready: Boolean(credentials) },
-    { label: "Active vehicle", ready: Boolean(vehicles) },
-    { label: "Active crew", ready: Boolean(crews) },
-  ];
+  const readiness = getProviderReadiness({
+    companyStatus: company?.status,
+    available: company?.available,
+    credentials: credentials || [],
+    vehicles: vehicles || [],
+    crews: crews || [],
+    serviceDate: serviceDate || new Date().toISOString().slice(0, 10),
+  });
+  const activeVehicles = (vehicles || []).filter(
+    (vehicle) => vehicle.active,
+  ).length;
+  const activeCrews = (crews || []).filter((crew) => crew.active).length;
   return (
     <RoleShell role="provider">
       <p className="eyebrow">Contractor company portal</p>
@@ -77,8 +78,8 @@ export default async function Page() {
         {[
           ["Pending offers", pendingOffers || 0],
           ["Upcoming jobs", upcomingJobs || 0],
-          ["Active vehicles", vehicles || 0],
-          ["Active crews", crews || 0],
+          ["Active vehicles", activeVehicles],
+          ["Active crews", activeCrews],
         ].map(([label, value]) => (
           <div key={label} className="rounded-2xl border bg-white p-5">
             <p className="text-sm font-bold text-slate">{label}</p>
@@ -89,10 +90,15 @@ export default async function Page() {
       <section className="card mt-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-black">Dispatch readiness</h2>
+            <h2 className="text-2xl font-black">
+              {readiness.ready
+                ? "Ready for job matching"
+                : "Dispatch readiness"}
+            </h2>
             <p className="mt-2 text-sm text-slate">
-              Eligibility is still evaluated per job and legally required
-              credentials cannot be overridden.
+              {readiness.readyCount} of {readiness.items.length} company-level
+              readiness checks complete. Eligibility is also evaluated for each
+              job, and legally required credentials cannot be overridden.
             </p>
           </div>
           <Link href="/provider/profile" className="btn-ghost">
@@ -100,16 +106,37 @@ export default async function Page() {
           </Link>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {readiness.map((item) => (
-            <div
+          {readiness.items.map((item) => (
+            <Link
               key={item.label}
-              className={`rounded-xl p-4 text-sm font-bold ${item.ready ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}
+              href={item.href}
+              className={`rounded-xl p-4 text-sm font-bold transition hover:-translate-y-0.5 ${item.ready ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}
             >
               {item.ready ? "Ready" : "Needs attention"}
-              <span className="mt-1 block font-normal">{item.label}</span>
-            </div>
+              <span className="mt-1 block">{item.label}</span>
+              <span className="mt-2 block font-normal">{item.detail}</span>
+            </Link>
           ))}
         </div>
+        {readiness.expiringCredentials.length > 0 && (
+          <div className="mt-5 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+            <p className="font-black">Credential renewal warning</p>
+            <p className="mt-1">
+              {readiness.expiringCredentials.length} verified credential
+              {readiness.expiringCredentials.length === 1
+                ? " expires"
+                : "s expire"}{" "}
+              within 30 days. The next expires in{" "}
+              {readiness.expiringCredentials[0].daysRemaining} days.
+            </p>
+            <Link
+              href="/provider/credentials"
+              className="mt-2 inline-block font-bold underline"
+            >
+              Review credentials
+            </Link>
+          </div>
+        )}
       </section>
       <Link
         href="/provider/jobs"
