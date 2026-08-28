@@ -25,6 +25,9 @@ export async function POST(
     p_request_id: crypto.randomUUID(),
   });
   if (error)
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Evidence could not be registered" },
+      { status: 400 },
+    );
   return NextResponse.json({ id: data }, { status: 201 });
 }

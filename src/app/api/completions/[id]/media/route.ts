@@ -35,6 +35,9 @@ export async function POST(
     p_size: Number(body.size || 0),
   });
   if (error)
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Evidence could not be registered" },
+      { status: 400 },
+    );
   return NextResponse.json({ id: data }, { status: 201 });
 }

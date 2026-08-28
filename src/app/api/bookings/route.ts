@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { logApiEvent } from "@/lib/operational-telemetry";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 const schema = z.object({
   draft: z
@@ -20,14 +21,23 @@ const schema = z.object({
   idempotencyKey: z.string().uuid(),
 });
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
   try {
     const body = schema.parse(await request.json());
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user)
+    if (!user) {
+      logApiEvent({
+        request,
+        event: "booking.create",
+        outcome: "rejected",
+        status: 401,
+        startedAt,
+      });
       return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+    }
     const d = body.draft;
     const stops = [
       {
@@ -48,12 +58,23 @@ export async function POST(request: NextRequest) {
       p_idempotency_key: body.idempotencyKey,
     });
     if (error) throw error;
+    logApiEvent({
+      request,
+      event: "booking.create",
+      outcome: "success",
+      status: 200,
+      startedAt,
+    });
     return NextResponse.json(data?.[0]);
   } catch (error) {
-    console.error(
-      "Booking submission failed",
-      error instanceof Error ? error.message : "unknown",
-    );
+    logApiEvent({
+      request,
+      event: "booking.create",
+      outcome: "failed",
+      status: 400,
+      startedAt,
+      error,
+    });
     return NextResponse.json({ error: "BOOKING_FAILED" }, { status: 400 });
   }
 }

@@ -68,7 +68,10 @@ export async function POST(request: NextRequest) {
   });
   if (error) {
     await supabase.storage.from("conversation-attachments").remove([path]);
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Private attachment could not be registered" },
+      { status: 400 },
+    );
   }
   return NextResponse.json({ id: data }, { status: 201 });
 }
