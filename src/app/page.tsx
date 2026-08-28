@@ -5,7 +5,6 @@ import {
   Building2,
   Camera,
   CheckCircle2,
-  CreditCard,
   MapPin,
   MessageCircle,
   ShieldCheck,
@@ -17,28 +16,43 @@ import { SiteShell } from "@/components/site-shell";
 const trust = [
   {
     icon: BadgeCheck,
-    title: "Verified providers",
-    copy: "Provider onboarding is designed around business, insurance, and credential review.",
+    title: "Provider review",
+    copy: "Providers must complete MUBER's business and credential-review process before becoming eligible for assignments.",
   },
   {
     icon: MessageCircle,
-    title: "Clear communication",
-    copy: "One organized place for job details, updates, and scope changes.",
+    title: "Managed coordination",
+    copy: "MUBER supports quoting, provider assignment, communication, and operational follow-through.",
   },
   {
     icon: Camera,
-    title: "Photo-supported estimates",
-    copy: "Show providers what the job involves before arrival.",
+    title: "Clear scope and quoting",
+    copy: "Request details and photos help MUBER review the scope and reduce uncertainty before work begins.",
   },
   {
-    icon: CreditCard,
-    title: "Secure digital payments",
-    copy: "A payment-ready foundation, with live processing coming later.",
+    icon: ShieldCheck,
+    title: "Private job information",
+    copy: "Customer records and uploaded media use authenticated, access-controlled storage.",
   },
   {
     icon: CheckCircle2,
-    title: "Documented completion",
-    copy: "Job history and completion records built into the workflow.",
+    title: "Documented progress",
+    copy: "Status history, messages, and completion records stay organized with the job.",
+  },
+];
+
+const process = [
+  {
+    title: "Tell us about the job",
+    copy: "Share locations, timing, access details, items, and optional photos.",
+  },
+  {
+    title: "Receive a reviewed quote",
+    copy: "MUBER reviews your request and prepares a clear quote before assignment.",
+  },
+  {
+    title: "Get coordinated service",
+    copy: "We coordinate an eligible independent provider and keep updates, messages, and job records together.",
   },
 ];
 export default function Home() {
@@ -51,12 +65,12 @@ export default function Home() {
             <div className="animate-rise">
               <p className="eyebrow">Now serving Southern California</p>
               <h1 className="mt-5 max-w-3xl text-5xl font-black leading-[.95] tracking-[-.05em] sm:text-7xl">
-                The simpler way to move what matters.
+                Moving and junk removal, managed from request to completion.
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-8 text-white/75">
-                Book moving or junk removal through one dependable, app-like
-                experience—built to keep every detail clear from request to
-                completion.
+                Tell us what you need, upload photos, and choose your preferred
+                date. MUBER reviews the scope, coordinates an independent local
+                provider, and keeps your job organized in one place.
               </p>
               <p className="mt-8 text-sm font-black tracking-[.2em]">
                 MOVE IT. <span className="text-orange">REMOVE IT.</span>
@@ -91,16 +105,13 @@ export default function Home() {
             </p>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {[
-              "Tell us what needs to move",
-              "Get matched with a verified local professional",
-              "Track and complete the job",
-            ].map((x, i) => (
-              <article className="card relative overflow-hidden" key={x}>
+            {process.map(({ title, copy }, i) => (
+              <article className="card relative overflow-hidden" key={title}>
                 <span className="text-6xl font-black text-navy/10">
                   0{i + 1}
                 </span>
-                <h3 className="mt-8 text-xl font-black">{x}</h3>
+                <h3 className="mt-8 text-xl font-black">{title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate">{copy}</p>
               </article>
             ))}
           </div>
@@ -109,7 +120,7 @@ export default function Home() {
           <div className="shell">
             <p className="eyebrow">Confidence at every step</p>
             <h2 className="mt-3 max-w-2xl text-4xl font-black tracking-[-.04em]">
-              Built for jobs that deserve more than a lead form.
+              Managed service—not another lead directory.
             </h2>
             <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {trust.map(({ icon: Icon, title, copy }) => (
