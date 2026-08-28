@@ -3,6 +3,17 @@ import { redirect } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { submitProviderApplication } from "./actions";
+import { providerApplicationStatus } from "@/lib/provider-application-status";
+
+type ApplicationStatus = {
+  id: string;
+  status: string;
+  legal_name: string;
+  dba_name: string | null;
+  submitted_at: string | null;
+  decided_at: string | null;
+  updated_at: string;
+};
 export default async function Page({
   searchParams,
 }: {
@@ -14,24 +25,63 @@ export default async function Page({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/contractor/login?next=/provider/apply");
-  if (p.submitted)
+  const { data: applicationRows } = await supabase.rpc(
+    "my_provider_application_status",
+  );
+  const application = (applicationRows?.[0] ||
+    null) as ApplicationStatus | null;
+  if (application) {
+    const presentation = providerApplicationStatus(application.status);
     return (
       <main className="shell grid min-h-screen place-items-center py-12">
-        <section className="card max-w-xl text-center">
-          <p className="eyebrow">Application submitted</p>
-          <h1 className="mt-3 text-4xl font-black">
-            Thanks for your interest in MUBER.
-          </h1>
+        <section className="card w-full max-w-2xl">
+          <p className="eyebrow">Contractor application</p>
+          <div className={`mt-5 rounded-2xl border p-5 ${presentation.tone}`}>
+            <p className="text-xs font-black uppercase tracking-widest">
+              {presentation.label}
+            </p>
+            <h1 className="mt-2 text-3xl font-black">{presentation.heading}</h1>
+            <p className="mt-3 leading-7">{presentation.description}</p>
+          </div>
+          <dl className="mt-6 grid gap-4 rounded-2xl bg-warm p-5 sm:grid-cols-2">
+            <div>
+              <dt className="text-xs font-black uppercase text-slate">
+                Company
+              </dt>
+              <dd className="mt-1 font-bold">
+                {application.dba_name || application.legal_name}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-black uppercase text-slate">
+                Last updated
+              </dt>
+              <dd className="mt-1 font-bold">
+                {new Date(application.updated_at).toLocaleDateString()}
+              </dd>
+            </div>
+          </dl>
           <p className="mt-5 text-slate">
-            Our compliance team will review your information. Applying does not
-            grant provider access, guarantee jobs, or enable payments.
+            An application does not guarantee jobs and does not enable payment
+            capability.
           </p>
-          <Link href="/" className="btn-navy mt-8">
-            Return home
-          </Link>
+          <div className="mt-8 flex flex-wrap gap-3">
+            {application.status === "approved" && (
+              <Link href="/provider/dashboard" className="btn-primary">
+                Open contractor portal
+              </Link>
+            )}
+            <Link href="/support" className="btn-navy">
+              Contact support
+            </Link>
+            <Link href="/" className="btn-ghost">
+              Return home
+            </Link>
+          </div>
         </section>
       </main>
     );
+  }
   return (
     <main className="min-h-screen bg-warm">
       <header className="border-b border-navy/10 bg-white">
