@@ -363,6 +363,8 @@ describe("portal separation", () => {
     expect(cleanupRegistered).toBeGreaterThan(mailboxCreated);
     expect(cleanupRegistered).toBeLessThan(signupStarted);
     expect(script).toContain("await Promise.allSettled(boxes.map(cleanup))");
+    expect(script).toContain("normalizeEmailLink");
+    expect(script).toContain('.replace(/[\\]\\),.]+$/g, "")');
   });
   it("derives credential warning dates from the database clock", () => {
     const page = fs.readFileSync(

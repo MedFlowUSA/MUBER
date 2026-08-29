@@ -38,21 +38,25 @@ status, sanitized reason, and cleanup status. Use
 `node scripts/create-certification-record.mjs --help` to produce a validated,
 secret-free JSONL record. Store working results outside Git.
 
-## Current blocked management checks
+## Current staging gate status
 
-Codex has no authorized Supabase Authentication URL Configuration surface in
-this workspace. In Supabase Dashboard, open the linked staging project, then
-Authentication → URL Configuration:
+The linked staging Auth configuration is managed through
+`supabase/config.toml`. The production Site URL, production callback/reset,
+exact current Preview callback/reset, and exact localhost callback/reset routes
+are configured without a broad wildcard. Email confirmation remains enabled.
 
-1. Confirm the production Site URL remains `https://muberapp.vercel.app`.
-2. Add the exact production callback and reset routes.
-3. Add the exact current Preview callback and reset routes for the deployment
-   under certification.
-4. Retain only required exact localhost callback/reset routes.
-5. Remove obsolete Preview entries and broad wildcards only after confirming
-   they are unused.
-6. Save, test verification and password reset in both environments, and record
-   the inspection time and result without copying tokens or signed links.
+On 2026-08-28, live registration delivered a confirmation message containing
+the requested exact Preview callback. The disposable-inbox parser initially
+included Markdown closing punctuation in that URL; the harness now normalizes
+that transport formatting and asserts the embedded redirect before consuming
+the confirmation link. A subsequent run was blocked before registration by
+Supabase hosted email quota enforcement (`over_email_send_rate_limit`). No RLS
+or application authorization assertion failed during this attempt.
+
+The two-customer live gate therefore remains blocked, not passed. Rerun after
+the provider quota resets or configure an approved custom SMTP provider. Do not
+disable email confirmation, use production identities, or promote production
+while the gate is incomplete.
 
 ## Human-assisted checklist
 

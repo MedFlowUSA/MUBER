@@ -33,6 +33,7 @@ const apiHeaders = (token) => ({
   Authorization: `Bearer ${token}`,
   "content-type": "application/json",
 });
+const normalizeEmailLink = (value) => value.replace(/[\]\),.]+$/g, "");
 async function mailbox() {
   const domains = await json("https://api.mail.tm/domains");
   const domain = domains.body["hydra:member"].find((x) => x.isActive)?.domain;
@@ -101,9 +102,24 @@ async function customer() {
     const content = [mail.text, ...(mail.html || [])]
       .join(" ")
       .replaceAll("&amp;", "&");
-    const links = content.match(/https?:\/\/[^\s"'<>]+/g) || [];
+    const links = (content.match(/https?:\/\/[^\s"'<>]+/g) || []).map(
+      normalizeEmailLink,
+    );
     const verify = links.find((x) => x.includes("supabase.co/auth/v1/verify"));
     if (!verify) throw new Error("Verification link not found");
+    const verifyUrl = new URL(verify);
+    const embeddedRedirect = verifyUrl.searchParams.get("redirect_to");
+    if (embeddedRedirect !== callback) {
+      let safeEmbeddedRedirect = "missing";
+      try {
+        const destination = new URL(embeddedRedirect);
+        safeEmbeddedRedirect = `${destination.origin}${destination.pathname}`;
+      } catch {}
+      throw new Error(
+        `FAILED: confirmation email preserves requested redirect (received ${safeEmbeddedRedirect})`,
+      );
+    }
+    assert("confirmation email preserves requested redirect", true);
     const verified = await fetch(verify, { redirect: "manual" });
     const location = verified.headers.get("location") || "";
     if (!location.startsWith(callback)) {
