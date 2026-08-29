@@ -45,6 +45,9 @@ export async function submitProviderApplication(form: FormData) {
     disposal_capability: form.get("disposal_capability") === "on",
     background_consent: form.get("background_consent") === "on",
     agreement_accepted: form.get("agreement_accepted") === "on",
+    authorized_representative_attested:
+      form.get("authorized_representative_attested") === "on",
+    no_guarantee_acknowledged: form.get("no_guarantee_acknowledged") === "on",
     notes: String(form.get("notes") || "").trim(),
   };
   const { data, error } = await supabase

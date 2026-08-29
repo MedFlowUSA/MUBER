@@ -1,21 +1,22 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  BadgeDollarSign,
   BriefcaseBusiness,
   CalendarCheck,
   ChartNoAxesCombined,
-  CreditCard,
+  ClipboardCheck,
+  MapPinned,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 import { SiteShell } from "@/components/site-shell";
 const benefits = [
-  [BriefcaseBusiness, "Well-scoped local jobs"],
-  [Users, "Customer acquisition"],
-  [CalendarCheck, "Booking tools"],
-  [CreditCard, "Digital payments"],
-  [ChartNoAxesCombined, "Job-management tools"],
-  [BadgeDollarSign, "Earnings visibility"],
+  [BriefcaseBusiness, "Reviewed job opportunities"],
+  [MapPinned, "Service-area matching"],
+  [CalendarCheck, "Availability controls"],
+  [ShieldCheck, "Credential readiness"],
+  [ChartNoAxesCombined, "Operational job tools"],
+  [Users, "Crew and fleet management"],
 ] as const;
 export default function Page() {
   return (
@@ -34,8 +35,13 @@ export default function Page() {
                 ahead.
               </p>
               <Link href="/provider/apply" className="btn-primary mt-8">
-                Become a provider <ArrowRight size={18} />
+                Apply to join MUBER <ArrowRight size={18} />
               </Link>
+              <p className="mt-4 max-w-xl text-sm leading-6 text-white/60">
+                No application fee. Application and approval are separate. No
+                job volume, revenue, earnings, or payment capability is
+                guaranteed.
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {benefits.map(([Icon, x]) => (
@@ -45,6 +51,32 @@ export default function Page() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+        <section className="shell py-20">
+          <div className="grid gap-8 lg:grid-cols-2">
+            <article className="card">
+              <ClipboardCheck className="text-orange" />
+              <p className="eyebrow mt-6">Moving companies</p>
+              <h2 className="mt-2 text-3xl font-black">Licensed businesses</h2>
+              <p className="mt-4 leading-7 text-slate">
+                California household-moving applicants must maintain the
+                permits, insurance, vehicles, personnel, and operating authority
+                required for every service they perform. MUBER verifies
+                credentials before dispatch eligibility.
+              </p>
+            </article>
+            <article className="card">
+              <ShieldCheck className="text-orange" />
+              <p className="eyebrow mt-6">Junk-removal companies</p>
+              <h2 className="mt-2 text-3xl font-black">Lawful hauling</h2>
+              <p className="mt-4 leading-7 text-slate">
+                Applicants should operate an established business with suitable
+                insurance, vehicles, crews, and lawful disposal capability.
+                Restricted materials and specialized hauling remain outside an
+                applicant’s eligibility unless separately verified.
+              </p>
+            </article>
           </div>
         </section>
         <section id="apply" className="shell py-20">
@@ -68,7 +100,7 @@ export default function Page() {
               <p className="mt-3 text-sm leading-6 text-slate">
                 Tell us about your company, credentials, service area, vehicles,
                 crews, and operating capabilities. Approval is reviewed by
-                MUBER.
+                MUBER. Payments and payouts are not active in the application.
               </p>
               <Link href="/provider/apply" className="btn-navy mt-7">
                 Start your application

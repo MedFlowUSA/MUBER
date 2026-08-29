@@ -131,8 +131,10 @@ export default async function Page({
           Tell us about your company.
         </h1>
         <p className="mt-4 max-w-2xl text-slate">
+          Applications are for established moving and junk-removal businesses.
           Application and approval are separate. Do not provide banking
-          information.
+          information, government identification, or private credential
+          documents in this form.
         </p>
         {p.error && (
           <p
@@ -201,14 +203,28 @@ export default async function Page({
             />
             <Check
               name="background_consent"
-              label="I consent to a future background/compliance review"
+              label="I understand that compliance or background review may require additional notices, documents, and consent before approval"
               required
             />
             <Check
               name="agreement_accepted"
-              label="I accept the provider-application terms placeholder"
+              label="I have read and agree to MUBER’s current Terms of Use and Privacy Policy"
               required
             />
+            <Check
+              name="authorized_representative_attested"
+              label="I am authorized to submit this application and bind the business identified above"
+              required
+            />
+            <Check
+              name="no_guarantee_acknowledged"
+              label="I understand that applying or being approved does not guarantee offers, jobs, revenue, earnings, or payment capability"
+              required
+            />
+            <p className="text-sm text-slate">
+              Review the <Link href="/terms">Terms of Use</Link> and{" "}
+              <Link href="/privacy">Privacy Policy</Link> before submitting.
+            </p>
           </div>
           <label className="sm:col-span-2">
             <span className="label">Application notes</span>
