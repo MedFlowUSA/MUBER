@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   MapPin,
   MessageCircle,
+  MessagesSquare,
   ShieldCheck,
   Sparkles,
   Truck,
@@ -128,6 +129,51 @@ export default function Home() {
                   <Icon className="text-orange" />
                   <h3 className="mt-5 font-black">{title}</h3>
                   <p className="mt-2 text-sm leading-6 text-slate">{copy}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section id="reviews" className="shell py-20 sm:py-28">
+          <div className="grid items-start gap-10 lg:grid-cols-[.8fr_1.2fr]">
+            <div>
+              <p className="eyebrow">MUBER reviews</p>
+              <h2 className="mt-3 text-4xl font-black tracking-[-.04em]">
+                Real feedback, when it’s real.
+              </h2>
+              <p className="mt-5 leading-7 text-slate">
+                MUBER will publish reviews only after they are connected to a
+                completed job. We are not filling this space with invented
+                customer or contractor stories while the marketplace is new.
+              </p>
+              <Link href="/reviews" className="btn-navy mt-7">
+                Our review standards <ArrowRight size={18} />
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                [
+                  BadgeCheck,
+                  "Verified experience",
+                  "Published feedback will be associated with a completed MUBER job.",
+                ],
+                [
+                  MessagesSquare,
+                  "Both sides matter",
+                  "Customer and provider perspectives will help improve marketplace quality.",
+                ],
+                [
+                  ShieldCheck,
+                  "Honest moderation",
+                  "Critical feedback will not be hidden merely because it is negative.",
+                ],
+              ].map(([Icon, title, copy]) => (
+                <article className="card" key={title as string}>
+                  <Icon className="text-orange" />
+                  <h3 className="mt-5 font-black">{title as string}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate">
+                    {copy as string}
+                  </p>
                 </article>
               ))}
             </div>

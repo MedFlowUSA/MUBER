@@ -92,6 +92,7 @@ export function Footer() {
             ["Privacy", "/privacy"],
             ["Terms", "/terms"],
             ["Providers", "/provider"],
+            ["Reviews", "/reviews"],
             ["Support", "/support"],
             ["Log in", "/portal"],
             ["Customer portal", "/customer/login"],

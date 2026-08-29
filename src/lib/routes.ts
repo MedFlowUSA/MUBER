@@ -16,6 +16,7 @@ import {
 export const publicNav = [
   { label: "How it works", href: "/#how" },
   { label: "Service area", href: "/#area" },
+  { label: "Reviews", href: "/reviews" },
   { label: "For contractors", href: "/provider" },
   { label: "Support", href: "/support" },
 ] as const;

@@ -12,6 +12,7 @@ const routes = [
   "contractor/register/page.tsx",
   "contractor/page.tsx",
   "provider/page.tsx",
+  "reviews/page.tsx",
   "provider/profile/page.tsx",
   "provider/availability/page.tsx",
   "crew/page.tsx",
