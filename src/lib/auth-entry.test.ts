@@ -43,10 +43,10 @@ describe("separated authentication entry points", () => {
     );
     expect(config).toContain('site_url = "https://muberapp.vercel.app"');
     expect(config).toContain(
-      '"https://muber-78hb1rfqi-manuel-rodriguezs-projects-f5946c44.vercel.app/auth/callback"',
+      '"https://muber-k2c3nuwkj-manuel-rodriguezs-projects-f5946c44.vercel.app/auth/callback"',
     );
     expect(config).toContain(
-      '"https://muber-78hb1rfqi-manuel-rodriguezs-projects-f5946c44.vercel.app/auth/reset"',
+      '"https://muber-k2c3nuwkj-manuel-rodriguezs-projects-f5946c44.vercel.app/auth/reset"',
     );
     expect(config).toContain('"http://localhost:3000/auth/callback"');
     expect(config).toContain('"http://localhost:3000/auth/reset"');
