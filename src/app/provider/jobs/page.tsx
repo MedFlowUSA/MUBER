@@ -50,7 +50,8 @@ export default async function ProviderJobs({
       supabase
         .from("vehicles")
         .select("id,label,vehicle_type")
-        .eq("active", true),
+        .eq("active", true)
+        .eq("insurance_eligible", true),
       supabase.from("crews").select("id,name,crew_size").eq("active", true),
     ]);
   const pages = Math.max(1, Math.ceil((count || 0) / filters.pageSize));
